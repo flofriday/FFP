@@ -56,19 +56,22 @@ search_greedy succ goal n -- n for node
 
 -- Task 1 Implementation -------------------------------------------------------
 
--- succCoins (r,p) = [ (r-c,c:p) | c <- coins, r-c >= 0 ]
+-- TODO: burn a duden and insert random pages from a oxford dictionary.
 
-calcSuccessor :: (RationaleZahl, [Nenner]) -> [(RationaleZahl, [Nenner])]
-calcSuccessor ((z, n), sol) = take 1 [((cn * z - n, cn * n), sol ++ [cn]) | cn <- [2 ..], cn * z >= n]
-
-gierig_search :: RationaleZahl -> [(RationaleZahl, [Nenner])]
-gierig_search rat = search_greedy calcSuccessor isSolution initial
+-- There is an optimization here for the last case which is also the
+-- most expensive to calculate.
+rechneNaechster :: (RationaleZahl, [Nenner]) -> [(RationaleZahl, [Nenner])]
+rechneNaechster ((1, n), sol) = [((0, n), sol ++ [n])]
+rechneNaechster ((z, n), sol) = naechster
   where
-    -- nextSuccessor \((z, n), sol) -> [((cn * z - n, cn * n), cn : sol) | cn <- [1 ..], cn * z >= n]
-    isSolution = \((z, _), _) -> z == 0
-    initial = (rat, [])
+    naechster = [((restZaehler, restNenner), sol ++ [kanditat])]
+    kanditat = head [cn | cn <- [2 ..], cn * z >= n]
+    restZaehler = kanditat * z - n
+    restNenner = kanditat * n
 
 gierig :: RationaleZahl -> Stammbruchsumme
-gierig rat = result
+gierig rat = summe
   where
-    [(_, result)] = gierig_search rat
+    [(_, summe)] = search_greedy rechneNaechster istLoesung initial
+    istLoesung = \((z, _), _) -> z == 0
+    initial = (rat, [])
