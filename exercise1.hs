@@ -75,3 +75,27 @@ gierig rat = summe
     [(_, summe)] = search_greedy rechneNaechster istLoesung initial
     istLoesung = \((z, _), _) -> z == 0
     initial = (rat, [])
+
+-- Task 2.1 implementation -------------------------------------------------------
+
+generier :: RationaleZahl -> Nenner -> MaxNenner -> [Stammbruchsumme]
+generier (z, n) minN maxN
+  | n > maxN = []
+  | minN > maxN = []
+  | kandidates == [] = []
+  | z == 1 = [[n]]
+  | otherwise = ergebnisInkludierend ++ ergebnisExkludierend
+  where
+    restInkludierend = (generier (restZaehler, restNenner) (kandidat + 1) maxN)
+    ergebnisInkludierend =
+      if restInkludierend /= []
+        then map (kandidat :) restInkludierend
+        else []
+    ergebnisExkludierend = generier (z, n) (kandidat + 1) maxN
+    kandidates = [cn | cn <- [minN .. maxN], cn * z >= n]
+    kandidat = head kandidates
+    restZaehler = kandidat * z - n
+    restNenner = kandidat * n
+
+gen :: RationaleZahl -> MaxNenner -> [Stammbruchsumme]
+gen rat maxN = generier rat 2 maxN
