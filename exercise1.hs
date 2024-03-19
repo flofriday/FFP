@@ -83,14 +83,14 @@ generier (z, n) minN maxN
   | n > maxN = []
   | minN > maxN = []
   | kandidates == [] = []
-  | z == 1 = [[n]]
+  | z == 0 = []
   | otherwise = ergebnisInkludierend ++ ergebnisExkludierend
   where
     restInkludierend = (generier (restZaehler, restNenner) (kandidat + 1) maxN)
     ergebnisInkludierend =
-      if restInkludierend /= []
+      if restZaehler /= 0
         then map (kandidat :) restInkludierend
-        else []
+        else [[kandidat]]
     ergebnisExkludierend = generier (z, n) (kandidat + 1) maxN
     kandidates = [cn | cn <- [minN .. maxN], cn * z >= n]
     kandidat = head kandidates
