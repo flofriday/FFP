@@ -1,5 +1,7 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
+import GHC.Num
+
 {-# HLINT ignore "Use camelCase" #-}
 type Nat1 = Integer
 
@@ -177,5 +179,19 @@ rs1 rat maxN maxDiff = map (\(_, l, _) -> l) rückSuchLösung
         restNenner = kandidat * n
 
 -- Task 3.2 implementation -----------------------------------------------------
--- rs2 :: RationaleZahl -> MaxNenner -> MaxDifferenz -> [Stammbruchsumme]
--- rs2 rat maxN maxSum =
+rs2 :: RationaleZahl -> MaxNenner -> MaxSummanden -> [Stammbruchsumme]
+rs2 rat maxN maxSum = map (\(_, l, _) -> l) rückSuchLösung
+  where
+    rückSuchLösung = search_dfs rückNachfolger ziel initial
+    ziel ((z, _), _, _) = z == 0
+    initial = (rat, [], 2)
+    rückNachfolger ((z, n), lös, minN) = ergebnis
+      where
+        ergebnis =
+          if null kandidaten || integerFromInt (length lös) == maxSum
+            then []
+            else [((restZaehler, restNenner), lös ++ [kandidat], kandidat + 1), ((z, n), lös, kandidat + 1)]
+        kandidaten = [cn | cn <- [minN .. maxN], cn * z >= n]
+        kandidat = head kandidaten
+        restZaehler = kandidat * z - n
+        restNenner = kandidat * n
