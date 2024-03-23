@@ -76,7 +76,7 @@ gierig rat = summe
     istLoesung = \((z, _), _) -> z == 0
     initial = (rat, [])
 
--- Task 2.1 implementation -------------------------------------------------------
+-- Task 2.1 implementation -----------------------------------------------------
 
 generier :: RationaleZahl -> Nenner -> MaxNenner -> [Stammbruchsumme]
 generier (z, n) minN maxN
@@ -98,3 +98,31 @@ generier (z, n) minN maxN
 
 gen :: RationaleZahl -> MaxNenner -> [Stammbruchsumme]
 gen rat maxN = generier rat 2 maxN
+
+-- Task 2.2 implementation -----------------------------------------------------
+
+ga1 :: RationaleZahl -> MaxNenner -> [Stammbruchsumme]
+ga1 rat maxN = filter kondition kandidaten
+  where
+    kondition = (\k -> length k == kleinsteLän)
+    kandidaten = gen rat maxN
+    kleinsteLän = minimum (map (length) kandidaten)
+
+-- Task 2.3 implementation ------------------------------------------------------
+
+ga2 :: RationaleZahl -> MaxNenner -> [Stammbruchsumme]
+ga2 rat maxN = filter kondition kandidaten
+  where
+    kondition = \k -> maximum k == kleinsterGrößterNenner
+    kleinsterGrößterNenner = minimum (map maximum kandidaten)
+    kandidaten = gen rat maxN
+
+-- Task 3.1 implementation -----------------------------------------------------
+rs1 :: RationaleZahl -> MaxNenner -> MaxDifferenz -> [Stammbruchsumme]
+rsi rat maxN maxDiff =
+
+-- Task 3.2 implementation -----------------------------------------------------
+--rs2 :: RationaleZahl -> MaxNenner -> MaxDifferenz -> [Stammbruchsumme]
+--rs2 rat maxN maxSum =
+
+
