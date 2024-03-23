@@ -179,6 +179,7 @@ rs1 rat maxN maxDiff = map (\(_, l, _) -> l) rückSuchLösung
         restNenner = kandidat * n
 
 -- Task 3.2 implementation -----------------------------------------------------
+
 rs2 :: RationaleZahl -> MaxNenner -> MaxSummanden -> [Stammbruchsumme]
 rs2 rat maxN maxSum = map (\(_, l, _) -> l) rückSuchLösung
   where
