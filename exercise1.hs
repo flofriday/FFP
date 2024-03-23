@@ -80,7 +80,6 @@ gierig rat = summe
 
 generier :: RationaleZahl -> Nenner -> MaxNenner -> [Stammbruchsumme]
 generier (z, n) minN maxN
-  | n > maxN = []
   | minN > maxN = []
   | kandidates == [] = []
   | z == 0 = []
