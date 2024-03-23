@@ -117,12 +117,65 @@ ga2 rat maxN = filter kondition kandidaten
     kleinsterGrößterNenner = minimum (map maximum kandidaten)
     kandidaten = gen rat maxN
 
+-- Task 3 Data and other stuff -------------------------------------------------
+
+data Stack a = Empty | Stk a (Stack a)
+
+empty = Empty
+
+is_empty Empty = True
+is_empty _ = False
+
+push x s = Stk x s
+
+pop Empty = error "Stack is empty"
+pop (Stk _ s) = s
+
+top Empty = error "Stack is empty"
+top (Stk x _) = x
+
+search_dfs succ goal n -- n for node
+  =
+  (search (push n empty))
+  where
+    search s -- s for stack
+      | is_empty s = []
+      | goal (top s) = top s : search (pop s)
+      | otherwise =
+          let m = top s
+           in search (foldr push (pop s) (succ m))
+
 -- Task 3.1 implementation -----------------------------------------------------
+
+type RückNode = (RationaleZahl, Stammbruchsumme, Nat1)
+
+-- rückNachfolger :: RückNode -> [RückNode]
+-- rückNachfolger (rest, lös) = ergebnis
+--   where
+--     ergebnis
+--     ober
+
 rs1 :: RationaleZahl -> MaxNenner -> MaxDifferenz -> [Stammbruchsumme]
-rsi rat maxN maxDiff =
+rs1 rat maxN maxDiff = map (\(_, l, _) -> l) rückSuchLösung
+  where
+    rückSuchLösung = search_dfs rückNachfolger ziel initial
+    ziel ((z, _), _, _) = z == 0
+    initial = (rat, [], 2)
+    rückNachfolger ((z, n), lös, minN) = ergebnis
+      where
+        ergebnis =
+          if kandidaten == []
+            then []
+            else [((restZaehler, restNenner), lös ++ [kandidat], kandidat + 1), ((z, n), lös, kandidat + 1)]
+        oberGrenze =
+          if lös == []
+            then maxN
+            else min ((minimum lös) + maxDiff) maxN
+        kandidaten = [cn | cn <- [minN .. oberGrenze], cn * z >= n]
+        kandidat = head kandidaten
+        restZaehler = kandidat * z - n
+        restNenner = kandidat * n
 
 -- Task 3.2 implementation -----------------------------------------------------
---rs2 :: RationaleZahl -> MaxNenner -> MaxDifferenz -> [Stammbruchsumme]
---rs2 rat maxN maxSum =
-
-
+-- rs2 :: RationaleZahl -> MaxNenner -> MaxDifferenz -> [Stammbruchsumme]
+-- rs2 rat maxN maxSum =
