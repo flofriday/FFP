@@ -1,6 +1,11 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
+import Data.List
+import Data.Maybe
 import GHC.Num
+import GHC.Stack (HasCallStack, callStack, getCallStack)
+import GHC.Stack.Types (SrcLoc)
+import Text.Printf
 
 {-# HLINT ignore "Use camelCase" #-}
 type Nat1 = Integer
@@ -196,3 +201,59 @@ rs2 rat maxN maxSum = map (\(_, l, _) -> l) rückSuchLösung
         kandidat = head kandidaten
         restZaehler = kandidat * z - n
         restNenner = kandidat * n
+
+-- TestSuite -------------------------------------------------------------------
+
+-- Asserts that two values are equal, otherwise prints an error message.
+assertEqual :: (Eq a, Show a) => String -> a -> a -> IO ()
+assertEqual testName actual expected =
+  if actual == expected
+    then putStrLn $ "\x1b[32mpassed\x1b[0m " ++ testName
+    else printf "\x1b[31mfailed\x1b[0m %s\n\tExpected: %s\n\tActual: %s\n" testName (show expected) (show actual)
+
+assertContains :: (Eq a, Show a) => String -> [a] -> a -> IO ()
+assertContains testName haystack needle =
+  if isJust (find (== needle) haystack)
+    then putStrLn $ "\x1b[32mpassed\x1b[0m " ++ testName
+    else printf "\x1b[31mfailed\x1b[0m %s\n\tExpected Containing: %s\n\tActual: %s\n" testName (show needle) (show haystack)
+
+-- Runs all tests
+runTests :: IO ()
+runTests = do
+  -- Exerise 1 tests --
+
+  assertEqual "gierig 2/3" (gierig (2, 3)) [2, 6]
+  assertEqual "gierig 2/5" (gierig (2, 5)) [3, 15]
+  assertEqual "gierig 3/7" (gierig (3, 7)) [3, 11, 231]
+  assertEqual "gierig 9/20" (gierig (9, 20)) [3, 9, 180]
+
+  assertEqual "gierig 7/15" (gierig (7, 15)) [3, 8, 120]
+  assertEqual "gierig 5/8" (gierig (5, 8)) [2, 8]
+  assertEqual "gierig 5/12" (gierig (5, 12)) [3, 12]
+
+  -- Exercise 2.1 tests --
+  -- FIXME: More tests but most of the assignment cannot be run as it takes too
+  -- long
+  assertEqual "gen 2/3 max=6" (gen (2, 3) 6) [[2, 6]]
+  assertEqual "gen 2/3 max=5" (gen (2, 3) 5) []
+  assertContains "gen 2/3 max=10" (gen (2, 3) 6) [2, 6]
+
+  -- Exercise 2.2 tests --
+  assertEqual "ga1 9/20 max=20" (ga1 (9, 20) 20) [[4, 5]]
+
+  -- Exercise 2.3 tests --
+  assertEqual "ga2 9/20 max=20" (ga2 (9, 20) 20) [[4, 5]]
+
+  -- Exercise 3.1 tests --
+  assertEqual "rs1 2/3 maxN=10 maxD=4" (rs1 (2, 3) 10 4) [[2, 6]]
+  assertEqual "rs1 2/3 maxN=10 maxD=3" (rs1 (2, 3) 10 3) []
+  assertEqual "rs1 2/3 maxN=100 maxD=3" (rs1 (2, 3) 100 3) []
+  assertEqual "rs1 2/5 maxN=15 maxD=11" (rs1 (2, 5) 15 11) [[4, 12, 15]]
+  assertEqual "rs1 2/5 maxN=15 maxD=10" (rs1 (2, 5) 15 10) []
+
+  -- Exercise 3.2 tests --
+  assertEqual "rs2 2/3 maxN=10 maxS=2" (rs2 (2, 3) 10 2) [[2, 6]]
+  assertEqual "rs2 2/3 maxN=10 maxS=1" (rs2 (2, 3) 10 1) []
+  assertEqual "rs2 2/3 maxN=100 maxS=1" (rs2 (2, 3) 100 1) []
+  assertEqual "rs2 2/5 maxN=15 maxS=2" (rs2 (2, 5) 15 2) [[3, 15]]
+  assertEqual "rs2 2/5 maxN=15 maxS=1" (rs2 (2, 5) 15 1) []
