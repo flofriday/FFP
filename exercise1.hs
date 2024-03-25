@@ -256,10 +256,9 @@ runTests = do
   assertEqual "ga1 2/3 max=20" (ga1 (2, 3) 20) [[2, 6]]
 
   -- Exercise 2.3 tests --
-  assertEqual "ga2 9/20 max=20" (ga2 (9, 20) 20) (Just [4,5])
-  assertEqual "ga2 5/31 max=42" (ga2 (5,31) 42) Nothing
-  assertEqual "ga2 2/3 max=5" (ga2 (2, 3) 5) Nothing
-  assertEqual "ga2 2/3 max=20" (ga2 (2, 3) 20) (Just [2, 6])
+  assertEqual "ga2 9/20 max=20" (ga2 (9, 20) 20) [[4,5]]
+  assertEqual "ga2 5/31 max=42" (ga2 (5,31) 42) []
+  assertEqual "ga2 2/3 max=5" (ga2 (2, 3) 5) []
   assertEqual "ga2 2/3 max=20" (ga2 (2, 3) 20) [[2, 6]]
 
   -- Exercise 3.1 tests --
