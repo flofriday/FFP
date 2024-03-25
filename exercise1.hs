@@ -91,6 +91,11 @@ gierig rat = summe
 
 -- Task 2.1 implementation -----------------------------------------------------
 
+istGroesserRat :: RationaleZahl -> RationaleZahl -> Bool
+istGroesserRat (zl, nl) (zr, nr)
+  | nl == nr = zl > zr
+  | otherwise = zl * nr > zr * nl
+
 -- we branch each time we find a solution:
 -- the first option is that we include the found solution in the rekurisve method
 -- the second option is that we do not innclude it and look for different solutions
@@ -98,6 +103,7 @@ generier :: RationaleZahl -> Nenner -> MaxNenner -> [Stammbruchsumme]
 generier (z, n) minN maxN
   | minN > maxN = []
   | kandidates == [] = []
+  | istGroesserRat (z, n) (maxN - minN, minN) = []
   | z == 0 = []
   | otherwise = ergebnisInkludierend ++ ergebnisExkludierend
   where
