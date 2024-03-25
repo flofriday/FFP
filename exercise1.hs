@@ -121,17 +121,17 @@ gen rat maxN = generier rat 2 maxN
 ga1 :: RationaleZahl -> MaxNenner -> [Stammbruchsumme]
 ga1 rat maxN = filter kondition kandidaten
   where
-    kondition k = length k == kleinsteLän
+    kondition k = length k == kleinsteLaen
     kandidaten = gen rat maxN
-    kleinsteLän = minimum (map (length) kandidaten)
+    kleinsteLaen = minimum (map (length) kandidaten)
 
 -- Task 2.3 implementation ------------------------------------------------------
 
 ga2 :: RationaleZahl -> MaxNenner -> [Stammbruchsumme]
 ga2 rat maxN = filter kondition kandidaten
   where
-    kondition k = maximum k == kleinsterGrößterNenner -- 3) find all elements that match
-    kleinsterGrößterNenner = minimum (map maximum kandidaten)  -- 2) for each candidate get the largest (last) element and find the one that has the smallest (largest) element
+    kondition k = maximum k == kleinsterGroeßterNenner -- 3) find all elements that match
+    kleinsterGroeßterNenner = minimum (map maximum kandidaten) -- 2) for each candidate get the largest (last) element and find the one that has the smallest (largest) element
     kandidaten = gen rat maxN -- 1) generate all candidates
 
 -- Task 3 Data and other stuff -------------------------------------------------
@@ -168,47 +168,45 @@ type MinNenner = Nat1
 type RückNode = (RationaleZahl, Stammbruchsumme, MinNenner, MaxNenner, MaxDifferenz)
 
 nachfolgerMaxDifferenz :: RückNode -> [RückNode]
-nachfolgerMaxDifferenz ((zaehler, nenner), lös, minN, maxN, maxDiff) = appendResults loesungListe
+nachfolgerMaxDifferenz ((zaehler, nenner), loes, minN, maxN, maxDiff) = appendResults loesungListe
   where
-    loesungListe = [n | n <- [minN .. maxN], nenner <= zaehler * n, null lös || n - head lös <= maxDiff]
-    appendResults = map (\neuerNenner -> ((zaehler * neuerNenner - 1 * nenner, nenner * neuerNenner), lös ++ [neuerNenner], neuerNenner + 1, maxN, maxDiff))
+    loesungListe = [n | n <- [minN .. maxN], nenner <= zaehler * n, null loes || n - head loes <= maxDiff]
+    appendResults = map (\neuerNenner -> ((zaehler * neuerNenner - 1 * nenner, nenner * neuerNenner), loes ++ [neuerNenner], neuerNenner + 1, maxN, maxDiff))
 
-istLösungMaxDifferenz :: RückNode -> Bool
-istLösungMaxDifferenz ((0, nenner), kandidat, minNenner, maxNenner, maxDifferenz) = nichtgroesserAlsMaxNenner && differenzNichtZuGross
+istLoesungMaxDifferenz :: RückNode -> Bool
+istLoesungMaxDifferenz ((0, nenner), kandidat, minNenner, maxNenner, maxDifferenz) = nichtgroesserAlsMaxNenner && differenzNichtZuGross
   where
     nichtgroesserAlsMaxNenner = last kandidat <= maxNenner
     differenzNichtZuGross = (last kandidat - head kandidat) <= maxDifferenz
-istLösungMaxDifferenz _ = False
+istLoesungMaxDifferenz _ = False
 
 rs1 :: RationaleZahl -> MaxNenner -> MaxDifferenz -> [Stammbruchsumme]
-rs1 rat maxN maxDiff = map (\(_, l, _, _, _) -> l) rückSuchLösung
+rs1 rat maxN maxDiff = map (\(_, l, _, _, _) -> l) rückSuchLoesung
   where
-    rückSuchLösung = search_dfs nachfolgerMaxDifferenz istLösungMaxDifferenz initial
+    rückSuchLoesung = search_dfs nachfolgerMaxDifferenz istLoesungMaxDifferenz initial
     initial = (rat, [], 2, maxN, maxDiff)
-    
 
 -- Task 3.2 implementation -----------------------------------------------------
 
 nachfolgerMaxSummand :: RückNode -> [RückNode]
-nachfolgerMaxSummand ((zaehler, nenner), lös, minN, maxN, maxSummand)
-  | toInteger (length lös) + 1 > maxSummand = []
+nachfolgerMaxSummand ((zaehler, nenner), loes, minN, maxN, maxSummand)
+  | toInteger (length loes) + 1 > maxSummand = []
   | otherwise = appendResults loesungListe
-    where
-      loesungListe = [n | n <- [minN .. maxN], nenner <= zaehler * n]
-      appendResults = map (\neuerNenner -> ((zaehler * neuerNenner - 1 * nenner, nenner * neuerNenner), lös ++ [neuerNenner], neuerNenner + 1, maxN, maxSummand))
+  where
+    loesungListe = [n | n <- [minN .. maxN], nenner <= zaehler * n]
+    appendResults = map (\neuerNenner -> ((zaehler * neuerNenner - 1 * nenner, nenner * neuerNenner), loes ++ [neuerNenner], neuerNenner + 1, maxN, maxSummand))
 
-
-istLösungMaxSummand :: RückNode -> Bool
-istLösungMaxSummand ((0, nenner), kandidat, minNenner, maxNenner, maxSummanden) = nichtgroesserAlsMaxNenner && anzahlSummandenNichtZuGross
+istLoesungMaxSummand :: RückNode -> Bool
+istLoesungMaxSummand ((0, nenner), kandidat, minNenner, maxNenner, maxSummanden) = nichtgroesserAlsMaxNenner && anzahlSummandenNichtZuGross
   where
     nichtgroesserAlsMaxNenner = last kandidat <= maxNenner
     anzahlSummandenNichtZuGross = toInteger (length kandidat) <= maxSummanden
-istLösungMaxSummand _ = False
+istLoesungMaxSummand _ = False
 
 rs2 :: RationaleZahl -> MaxNenner -> MaxSummanden -> [Stammbruchsumme]
-rs2 rat maxN maxSummand = map (\(_, l, _, _, _) -> l) rückSuchLösung
+rs2 rat maxN maxSummand = map (\(_, l, _, _, _) -> l) rückSuchLoesung
   where
-    rückSuchLösung = search_dfs nachfolgerMaxSummand istLösungMaxSummand initial
+    rückSuchLoesung = search_dfs nachfolgerMaxSummand istLoesungMaxSummand initial
     initial = (rat, [], 2, maxN, maxSummand)
 
 -- TestSuite -------------------------------------------------------------------
@@ -245,7 +243,7 @@ runTests = do
   -- long
   assertEqual "gen 2/3 max=6" (gen (2, 3) 6) [[2, 6]]
   assertEqual "gen 2/3 max=5" (gen (2, 3) 5) []
-  assertContains "gen 2/3 max=10" (gen (2, 3) 6) [2, 6]
+  assertContains "gen 2/3 max=10" (gen (2, 3) 10) [2, 6]
   assertEqual "gen 1/3 max=2" (gen (1, 3) 2) []
   assertEqual "gen 2/3 max=15" (gen (2, 3) 15) [[2, 6], [2, 10, 15], [3, 4, 12], [3, 6, 10, 15], [4, 6, 10, 12, 15]]
 
@@ -255,8 +253,8 @@ runTests = do
   assertEqual "ga1 2/3 max=20" (ga1 (2, 3) 20) [[2, 6]]
 
   -- Exercise 2.3 tests --
-  assertEqual "ga2 9/20 max=20" (ga2 (9, 20) 20) [[4,5]]
-  assertEqual "ga2 5/31 max=42" (ga2 (5,31) 42) []
+  assertEqual "ga2 9/20 max=20" (ga2 (9, 20) 20) [[4, 5]]
+  assertEqual "ga2 5/31 max=42" (ga2 (5, 31) 42) []
   assertEqual "ga2 2/3 max=5" (ga2 (2, 3) 5) []
   assertEqual "ga2 2/3 max=20" (ga2 (2, 3) 20) [[2, 6]]
 
