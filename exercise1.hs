@@ -167,44 +167,49 @@ type MinNenner = Nat1
 
 type RückNode = (RationaleZahl, Stammbruchsumme, MinNenner, MaxNenner, MaxDifferenz)
 
-rückNachfolger :: RückNode -> [RückNode]
-rückNachfolger ((zaehler, nenner), lös, minN, maxN, maxDiff) = appendResults loesungListe
+nachfolgerMaxDifferenz :: RückNode -> [RückNode]
+nachfolgerMaxDifferenz ((zaehler, nenner), lös, minN, maxN, maxDiff) = appendResults loesungListe
   where
     loesungListe = [n | n <- [minN .. maxN], nenner <= zaehler * n, null lös || n - head lös <= maxDiff]
     appendResults = map (\neuerNenner -> ((zaehler * neuerNenner - 1 * nenner, nenner * neuerNenner), lös ++ [neuerNenner], neuerNenner + 1, maxN, maxDiff))
 
-istLösungNachfolger :: RückNode -> Bool
-istLösungNachfolger ((0, nenner), kandidat, minNenner, maxNenner, maxDifferenz) = nichtgroesserAlsMaxNenner && differenzNichtZuGross
+istLösungMaxDifferenz :: RückNode -> Bool
+istLösungMaxDifferenz ((0, nenner), kandidat, minNenner, maxNenner, maxDifferenz) = nichtgroesserAlsMaxNenner && differenzNichtZuGross
   where
     nichtgroesserAlsMaxNenner = last kandidat <= maxNenner
     differenzNichtZuGross = (last kandidat - head kandidat) <= maxDifferenz
-istLösungNachfolger _ = False
+istLösungMaxDifferenz _ = False
 
 rs1 :: RationaleZahl -> MaxNenner -> MaxDifferenz -> [Stammbruchsumme]
 rs1 rat maxN maxDiff = map (\(_, l, _, _, _) -> l) rückSuchLösung
   where
-    rückSuchLösung = search_dfs rückNachfolger istLösungNachfolger initial
+    rückSuchLösung = search_dfs nachfolgerMaxDifferenz istLösungMaxDifferenz initial
     initial = (rat, [], 2, maxN, maxDiff)
     
 
 -- Task 3.2 implementation -----------------------------------------------------
 
-rs2 :: RationaleZahl -> MaxNenner -> MaxSummanden -> [Stammbruchsumme]
-rs2 rat maxN maxSum = map (\(_, l, _) -> l) rückSuchLösung
+nachfolgerMaxSummand :: RückNode -> [RückNode]
+nachfolgerMaxSummand ((zaehler, nenner), lös, minN, maxN, maxSummand)
+  | toInteger (length lös) + 1 > maxSummand = []
+  | otherwise = appendResults loesungListe
+    where
+      loesungListe = [n | n <- [minN .. maxN], nenner <= zaehler * n]
+      appendResults = map (\neuerNenner -> ((zaehler * neuerNenner - 1 * nenner, nenner * neuerNenner), lös ++ [neuerNenner], neuerNenner + 1, maxN, maxSummand))
+
+
+istLösungMaxSummand :: RückNode -> Bool
+istLösungMaxSummand ((0, nenner), kandidat, minNenner, maxNenner, maxSummanden) = nichtgroesserAlsMaxNenner && anzahlSummandenNichtZuGross
   where
-    rückSuchLösung = search_dfs rückNachfolger ziel initial
-    ziel ((z, _), _, _) = z == 0
-    initial = (rat, [], 2)
-    rückNachfolger ((z, n), lös, minN) = ergebnis
-      where
-        ergebnis =
-          if null kandidaten || integerFromInt (length lös) == maxSum
-            then []
-            else [((restZaehler, restNenner), lös ++ [kandidat], kandidat + 1), ((z, n), lös, kandidat + 1)]
-        kandidaten = [cn | cn <- [minN .. maxN], cn * z >= n]
-        kandidat = head kandidaten
-        restZaehler = kandidat * z - n
-        restNenner = kandidat * n
+    nichtgroesserAlsMaxNenner = last kandidat <= maxNenner
+    anzahlSummandenNichtZuGross = toInteger (length kandidat) <= maxSummanden
+istLösungMaxSummand _ = False
+
+rs2 :: RationaleZahl -> MaxNenner -> MaxSummanden -> [Stammbruchsumme]
+rs2 rat maxN maxSummand = map (\(_, l, _, _, _) -> l) rückSuchLösung
+  where
+    rückSuchLösung = search_dfs nachfolgerMaxSummand istLösungMaxSummand initial
+    initial = (rat, [], 2, maxN, maxSummand)
 
 -- TestSuite -------------------------------------------------------------------
 
