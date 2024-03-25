@@ -65,10 +65,12 @@ search_greedy succ goal n -- n for node
 
 -- TODO: burn a duden and insert random pages from a oxford dictionary.
 
+type Gierig_Node = (RationaleZahl, [Nenner])
+
 -- There is an optimization here for the last case which is also the
 -- most expensive to calculate.
-rechneNaechster :: (RationaleZahl, [Nenner]) -> [(RationaleZahl, [Nenner])]
-rechneNaechster ((1, n), sol) = [((0, n), sol ++ [n])]
+rechneNaechster :: Gierig_Node -> [Gierig_Node]
+rechneNaechster ((1, n), sol) = [((0, n), sol ++ [n])] -- last case, we can just return n and know that there can be no additonal cases (at least for this greedy implementation)
 rechneNaechster ((z, n), sol) = naechster
   where
     naechster = [((restZaehler, restNenner), sol ++ [kanditat])]
@@ -76,15 +78,22 @@ rechneNaechster ((z, n), sol) = naechster
     restZaehler = kanditat * z - n
     restNenner = kanditat * n
 
+-- We use the greedy algorithm to calculate the results. We only return the list
+-- of denominators, as the rest will aways be 0 if we found a solution.
+-- As the start value we pass an empty list and the inital rationalNumber that will get
+-- smaller and smaller in each recursive step
 gierig :: RationaleZahl -> Stammbruchsumme
 gierig rat = summe
   where
     [(_, summe)] = search_greedy rechneNaechster istLoesung initial
-    istLoesung = \((z, _), _) -> z == 0
+    istLoesung ((z, _), _) = z == 0
     initial = (rat, [])
 
 -- Task 2.1 implementation -----------------------------------------------------
 
+-- we branch each time we find a solution:
+-- the first option is that we include the found solution in the rekurisve method
+-- the second option is that we do not innclude it and look for different solutions
 generier :: RationaleZahl -> Nenner -> MaxNenner -> [Stammbruchsumme]
 generier (z, n) minN maxN
   | minN > maxN = []
@@ -108,19 +117,20 @@ gen rat maxN = generier rat 2 maxN
 
 -- Task 2.2 implementation -----------------------------------------------------
 
+-- find all Stammbruchsummen with the smallest amount of denominators, i.e. smallest length of list
 ga1 :: RationaleZahl -> MaxNenner -> [Stammbruchsumme]
 ga1 rat maxN = filter kondition kandidaten
   where
-    kondition = (\k -> length k == kleinsteLän)
+    kondition k = length k == kleinsteLän
     kandidaten = gen rat maxN
     kleinsteLän = minimum (map (length) kandidaten)
 
 -- Task 2.3 implementation ------------------------------------------------------
 
-ga2 :: RationaleZahl -> MaxNenner -> Maybe Stammbruchsumme
-ga2 rat maxN = find kondition kandidaten
+ga2 :: RationaleZahl -> MaxNenner -> [Stammbruchsumme]
+ga2 rat maxN = filter kondition kandidaten
   where
-    kondition k = maximum k == kleinsterGrößterNenner -- 3)
+    kondition k = maximum k == kleinsterGrößterNenner -- 3) find all elements that match
     kleinsterGrößterNenner = minimum (map maximum kandidaten)  -- 2) for each candidate get the largest (last) element and find the one that has the smallest (largest) element
     kandidaten = gen rat maxN -- 1) generate all candidates
 
@@ -250,6 +260,7 @@ runTests = do
   assertEqual "ga2 5/31 max=42" (ga2 (5,31) 42) Nothing
   assertEqual "ga2 2/3 max=5" (ga2 (2, 3) 5) Nothing
   assertEqual "ga2 2/3 max=20" (ga2 (2, 3) 20) (Just [2, 6])
+  assertEqual "ga2 2/3 max=20" (ga2 (2, 3) 20) [[2, 6]]
 
   -- Exercise 3.1 tests --
   assertEqual "rs1 2/3 maxN=10 maxD=4" (rs1 (2, 3) 10 4) [[2, 6]]
