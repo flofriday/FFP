@@ -103,7 +103,7 @@ generier :: RationaleZahl -> Nenner -> MaxNenner -> [Stammbruchsumme]
 generier (z, n) minN maxN
   | minN > maxN = []
   | kandidates == [] = []
-  | istGroesserRat (z, n) (maxN - minN, minN) = []
+  | istGroesserRat (z, n) (maxN - minN, minN) = [] -- Eine optimierung um früher zu terminieren
   | z == 0 = []
   | otherwise = ergebnisInkludierend ++ ergebnisExkludierend
   where
