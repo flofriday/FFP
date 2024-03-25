@@ -163,27 +163,17 @@ search_dfs succ goal n -- n for node
            in search (foldr push (pop s) (succ m))
 
 -- Task 3.1 implementation -----------------------------------------------------
+type MinNenner = Nat1
 
-type RückNode = (RationaleZahl, Stammbruchsumme, Nat1)
+type RückNode = (RationaleZahl, Stammbruchsumme, MinNenner, MaxNenner, MaxDifferenz)
 
--- rückNachfolger :: RückNode -> [RückNode]
--- rückNachfolger (rest, lös) = ergebnis
---   where
---     ergebnis
---     ober
-
-rs1 :: RationaleZahl -> MaxNenner -> MaxDifferenz -> [Stammbruchsumme]
-rs1 rat maxN maxDiff = map (\(_, l, _) -> l) rückSuchLösung
-  where
-    rückSuchLösung = search_dfs rückNachfolger ziel initial
-    ziel ((z, _), _, _) = z == 0
-    initial = (rat, [], 2)
-    rückNachfolger ((z, n), lös, minN) = ergebnis
+rückNachfolger :: RückNode -> [RückNode]
+rückNachfolger ((z, n), lös, minN, maxN, maxDiff) = ergebnis
       where
         ergebnis =
           if kandidaten == []
             then []
-            else [((restZaehler, restNenner), lös ++ [kandidat], kandidat + 1), ((z, n), lös, kandidat + 1)]
+            else [((restZaehler, restNenner), lös ++ [kandidat], kandidat + 1, maxN, maxDiff), ((z, n), lös, kandidat + 1, maxN, maxDiff)]
         oberGrenze =
           if lös == []
             then maxN
@@ -192,6 +182,14 @@ rs1 rat maxN maxDiff = map (\(_, l, _) -> l) rückSuchLösung
         kandidat = head kandidaten
         restZaehler = kandidat * z - n
         restNenner = kandidat * n
+
+rs1 :: RationaleZahl -> MaxNenner -> MaxDifferenz -> [Stammbruchsumme]
+rs1 rat maxN maxDiff = map (\(_, l, _, _, _) -> l) rückSuchLösung
+  where
+    rückSuchLösung = search_dfs rückNachfolger ziel initial
+    ziel ((z, _), _, _, _, _) = z == 0
+    initial = (rat, [], 2, maxN, maxDiff)
+    
 
 -- Task 3.2 implementation -----------------------------------------------------
 
