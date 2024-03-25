@@ -237,16 +237,24 @@ runTests = do
   assertEqual "gen 2/3 max=6" (gen (2, 3) 6) [[2, 6]]
   assertEqual "gen 2/3 max=5" (gen (2, 3) 5) []
   assertContains "gen 2/3 max=10" (gen (2, 3) 6) [2, 6]
+  assertEqual "gen 1/3 max=2" (gen (1, 3) 2) []
+  assertEqual "gen 2/3 max=15" (gen (2, 3) 15) [[2, 6], [2, 10, 15], [3, 4, 12], [3, 6, 10, 15], [4, 6, 10, 12, 15]]
 
   -- Exercise 2.2 tests --
   assertEqual "ga1 9/20 max=20" (ga1 (9, 20) 20) [[4, 5]]
+  assertEqual "ga1 2/3 max=5" (ga1 (2, 3) 5) []
+  assertEqual "ga1 2/3 max=20" (ga1 (2, 3) 20) [[2, 6]]
 
   -- Exercise 2.3 tests --
   assertEqual "ga2 9/20 max=20" (ga2 (9, 20) 20) (Just [4,5])
   assertEqual "ga2 5/31 max=42" (ga2 (5,31) 42) Nothing
+  assertEqual "ga2 2/3 max=5" (ga2 (2, 3) 5) Nothing
+  assertEqual "ga2 2/3 max=20" (ga2 (2, 3) 20) (Just [2, 6])
 
   -- Exercise 3.1 tests --
   assertEqual "rs1 2/3 maxN=10 maxD=4" (rs1 (2, 3) 10 4) [[2, 6]]
+  assertEqual "rs1 2/3 maxN=7 maxD=100" (rs1 (2, 3) 7 100) [[2, 6]]
+  assertEqual "rs1 2/3 maxN=2 maxD=2" (rs1 (2, 3) 2 2) []
   assertEqual "rs1 2/3 maxN=10 maxD=3" (rs1 (2, 3) 10 3) []
   assertEqual "rs1 2/3 maxN=100 maxD=3" (rs1 (2, 3) 100 3) []
   assertEqual "rs1 2/5 maxN=15 maxD=11" (rs1 (2, 5) 15 11) [[4, 12, 15]]
@@ -254,6 +262,7 @@ runTests = do
 
   -- Exercise 3.2 tests --
   assertEqual "rs2 2/3 maxN=10 maxS=2" (rs2 (2, 3) 10 2) [[2, 6]]
+  assertEqual "rs2 2/3 maxN=2 maxS=2" (rs2 (2, 3) 2 2) []
   assertEqual "rs2 2/3 maxN=10 maxS=1" (rs2 (2, 3) 10 1) []
   assertEqual "rs2 2/3 maxN=100 maxS=1" (rs2 (2, 3) 100 1) []
   assertEqual "rs2 2/5 maxN=15 maxS=2" (rs2 (2, 5) 15 2) [[3, 15]]
