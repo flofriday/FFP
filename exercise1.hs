@@ -117,12 +117,12 @@ ga1 rat maxN = filter kondition kandidaten
 
 -- Task 2.3 implementation ------------------------------------------------------
 
-ga2 :: RationaleZahl -> MaxNenner -> [Stammbruchsumme]
-ga2 rat maxN = filter kondition kandidaten
+ga2 :: RationaleZahl -> MaxNenner -> Maybe Stammbruchsumme
+ga2 rat maxN = find kondition kandidaten
   where
-    kondition = \k -> maximum k == kleinsterGrößterNenner
-    kleinsterGrößterNenner = minimum (map maximum kandidaten)
-    kandidaten = gen rat maxN
+    kondition k = maximum k == kleinsterGrößterNenner -- 3)
+    kleinsterGrößterNenner = minimum (map maximum kandidaten)  -- 2) for each candidate get the largest (last) element and find the one that has the smallest (largest) element
+    kandidaten = gen rat maxN -- 1) generate all candidates
 
 -- Task 3 Data and other stuff -------------------------------------------------
 
@@ -242,7 +242,8 @@ runTests = do
   assertEqual "ga1 9/20 max=20" (ga1 (9, 20) 20) [[4, 5]]
 
   -- Exercise 2.3 tests --
-  assertEqual "ga2 9/20 max=20" (ga2 (9, 20) 20) [[4, 5]]
+  assertEqual "ga2 9/20 max=20" (ga2 (9, 20) 20) (Just [4,5])
+  assertEqual "ga2 5/31 max=42" (ga2 (5,31) 42) Nothing
 
   -- Exercise 3.1 tests --
   assertEqual "rs1 2/3 maxN=10 maxD=4" (rs1 (2, 3) 10 4) [[2, 6]]
