@@ -74,13 +74,22 @@ istWgfL grid = wgf1 && wgf2 && wgf3
     wgf3 = all maxTwoAdjacent rows && all maxTwoAdjacent columns
 
 istWgfF :: BinoxxoF -> Bool
-istWgfF grid = False
+istWgfF arr = wgf1 && wgf2 && wgf3
+  where
+    ((rowStart, columnStart), (rowSize, columnSize)) = bounds arr
+    rows = [[arr ! (i, j) | j <- [columnStart .. columnSize]] | i <- [rowStart .. rowSize]]
+    columns = transpose rows
+    wgf1 = all listHasEqualXandO rows && all listHasEqualXandO columns
+    wgf2 = distinct rows && distinct columns
+    wgf3 = all maxTwoAdjacent rows && all maxTwoAdjacent columns
 
 istVollständigL :: BinoxxoL -> Bool
 istVollständigL grid = all (Empty `notElem`) grid
 
 istVollstaendigF :: BinoxxoF -> Bool
-istVollstaendigF grid = False
+istVollstaendigF arr = Empty `notElem` elements
+  where
+    elements = elems arr
 
 -- Task 4 ----------------------------------------------------------------------
 
@@ -121,7 +130,7 @@ runTests = do
     "generiereBinoxxoF3 basic case"
     (generiereBinoxxoF3 (2, 2) [((1, 1), X), ((1, 2), O), ((1, 1), O), ((2, 1), X), ((2, 2), Empty)])
     (array ((1, 1), (2, 2)) [((1, 1), O), ((1, 2), O), ((2, 1), X), ((2, 2), Empty)])
-  -- Task 3 tests --
+  -- Task 3 tests Lists--
   assertEqual
     "istWgfL 2x2 valid1"
     (istWgfL [[X, O], [O, X]])
@@ -181,4 +190,65 @@ runTests = do
   assertEqual
     "istVollständigL 4x4 invalid2"
     (istVollständigL [[X, O, X, O], [O, X, O, X], [X, X, X, O], [O, X, X, Empty]])
+    False
+  -- Task 3 tests Fields/Arrays--
+  assertEqual
+    "istWgfF 2x2 valid1"
+    (istWgfF (listArray ((1, 1), (2, 2)) [X, O, O, X]))
+    True
+  assertEqual
+    "istWgfF 2x2 valid2"
+    (istWgfF (listArray ((1, 1), (2, 2)) [O, X, X, O]))
+    True
+  assertEqual
+    "istWgfF 2x2 invalid1"
+    (istWgfF (listArray ((1, 1), (2, 2)) [X, X, X, O]))
+    False
+  assertEqual
+    "istWgfF 2x2 invalid2"
+    (istWgfF (listArray ((1, 1), (2, 2)) [O, X, O, O]))
+    False
+  assertEqual
+    "istWgfF 2x2 invalid3"
+    (istWgfF (listArray ((1, 1), (2, 2)) [O, O, O, O]))
+    False
+  assertEqual
+    "istWgfF 4x4 valid1"
+    (istWgfF (listArray ((1, 1), (4, 4)) [O, O, X, X, X, O, O, X, X, X, O, O, O, X, X, O]))
+    True
+  assertEqual
+    "istWgfF 4x4 valid2"
+    (istWgfF (listArray ((1, 1), (4, 4)) [X, O, X, O, O, X, O, X, X, O, O, X, O, X, X, O]))
+    True
+  assertEqual
+    "istWgfF 4x4 invalid1"
+    (istWgfF (listArray ((1, 1), (4, 4)) [X, O, X, O, O, X, O, X, X, O, X, O, O, X, O, X]))
+    False
+  assertEqual
+    "istWgfF 4x4 invalid2"
+    (istWgfF (listArray ((1, 1), (4, 4)) [X, O, X, O, O, X, O, X, X, X, X, O, O, X, X, O]))
+    False
+  assertEqual
+    "istVollstaendigF 2x2 valid1"
+    (istVollstaendigF (listArray ((1, 1), (2, 2)) [O, O, O, O]))
+    True
+  assertEqual
+    "istVollstaendigF 2x2 invalid1"
+    (istVollstaendigF (listArray ((1, 1), (2, 2)) [O, Empty, O, O]))
+    False
+  assertEqual
+    "istVollstaendigF 2x2 invalid2"
+    (istVollstaendigF (listArray ((1, 1), (2, 2)) [O, O, O, Empty]))
+    False
+  assertEqual
+    "istVollstaendigF 4x4 valid1"
+    (istVollstaendigF (listArray ((1, 1), (4, 4)) [X, O, X, O, O, X, O, X, X, X, X, O, O, X, X, O]))
+    True
+  assertEqual
+    "istVollstaendigF 4x4 invalid1"
+    (istVollstaendigF (listArray ((1, 1), (4, 4)) [X, O, X, O, O, X, O, X, X, X, X, Empty, O, X, X, O]))
+    False
+  assertEqual
+    "istVollstaendigF 4x4 invalid2"
+    (istVollstaendigF (listArray ((1, 1), (4, 4)) [X, O, X, O, O, X, O, X, X, X, X, O, O, X, X, Empty]))
     False
