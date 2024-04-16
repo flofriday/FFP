@@ -20,6 +20,8 @@ type Index = (Nat1, Nat1)
 
 data Cell = X | O | Empty deriving (Show)
 
+-- FIXME: There might be some changes on how they are defined so that they are
+-- more testable.
 instance Eq Cell where
   (==) X X = True
   (==) O O = True
@@ -34,6 +36,7 @@ lengthAsInteger :: [a] -> Integer
 lengthAsInteger x = toInteger (length x)
 
 -- Task 2 ----------------------------------------------------------------------
+-- NOTE: Wird eventuell noch eine Signatur vorgegeben
 generiereBinoxxoL :: Index -> BinoxxoL -> BinoxxoL
 generiereBinoxxoL (rows, cols) cells = cells
 
