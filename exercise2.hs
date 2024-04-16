@@ -5,6 +5,7 @@
 import Data.Array
 import Data.List
 import Data.Maybe
+import Distribution.Simple.Build (repl)
 import Text.Printf
 
 -- Preliminaries
@@ -36,7 +37,6 @@ lengthAsInteger :: [a] -> Integer
 lengthAsInteger x = toInteger (length x)
 
 -- Task 2 ----------------------------------------------------------------------
--- NOTE: Wird eventuell noch eine Signatur vorgegeben
 generiereBinoxxoL :: Index -> BinoxxoL -> BinoxxoL
 generiereBinoxxoL (rows, cols) cells = cells
 
@@ -95,6 +95,63 @@ istVollstaendigF arr = Empty `notElem` elements
     elements = elems arr
 
 -- Task 4 ----------------------------------------------------------------------
+
+fillFirstInRowL :: Cell -> [Cell] -> [Cell]
+fillFirstInRowL _ [] = []
+fillFirstInRowL cell (Empty : fields) = cell : fields
+fillFirstInRowL cell (field : fields) = field : fillFirstInRowL cell fields
+
+-- Fills the first empty field with the cell type specified
+fillFirstEmptyL :: Cell -> BinoxxoL -> BinoxxoL
+fillFirstEmptyL Empty _ = error "What are you doing?"
+fillFirstEmptyL cell (row : rows)
+  | any (== Empty) row = fillFirstInRowL cell row : rows
+  | otherwise = row : fillFirstEmptyL cell rows
+
+-- A version of listHasEqualXandO that respects empty
+listPossiblyHasEqualXandO :: [Cell] -> Bool
+listPossiblyHasEqualXandO list = amountXs <= length_half && amountOs <= length_half
+  where
+    amountXs = length (filter (== X) list)
+    amountOs = length (filter (== O) list)
+    length_half = length list `div` 2
+
+maxPossiblyTwoAdjacent :: [Cell] -> Bool
+maxPossiblyTwoAdjacent [] = True
+maxPossiblyTwoAdjacent [x] = True
+maxPossiblyTwoAdjacent [x, y] = True
+maxPossiblyTwoAdjacent (x : y : z : xs)
+  | x /= Empty && y /= Empty && z /= Empty && x == y && y == z = False
+  | otherwise = True
+
+-- A version which is a more relaxed istWgf but respects that some fields are
+-- empty and therefore can be either case.
+isPossiblyWfgL :: BinoxxoL -> Bool
+isPossiblyWfgL grid = wgf1 && wgf2 && wgf3
+  where
+    rows = grid
+    columns = transpose grid
+    wgf1 = all listPossiblyHasEqualXandO rows && all listPossiblyHasEqualXandO columns
+    wgf2 = distinct (filter (notElem Empty) rows) && distinct (filter (notElem Empty) columns)
+    wgf3 = all maxTwoAdjacent rows && all maxTwoAdjacent columns
+
+-- This solution iterates over all empty fields, randomly set's one of the two
+-- possibilities and and verifies it and uses some backtracking in case some
+-- errors only come up later
+loeseNaivL :: BinoxxoL -> Maybe BinoxxoL
+loeseNaivL board
+  | not (isPossiblyWfgL board) = Nothing
+  | istVollständigL board = Just board
+  | otherwise = result
+  where
+    filledWithCross = fillFirstEmptyL X board
+    continuedWithCross = loeseNaivL filledWithCross
+    filledWithCircle = fillFirstEmptyL O board
+    continuedWithCircle = loeseNaivL filledWithCircle
+    result = case (continuedWithCross, continuedWithCircle) of
+      (Just a, _) -> Just a
+      (_, Just a) -> Just a
+      _ -> Nothing
 
 -- Task 5 ----------------------------------------------------------------------
 
