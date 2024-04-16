@@ -95,6 +95,12 @@ istVollstaendigF arr = Empty `notElem` elements
 
 -- Task 5 ----------------------------------------------------------------------
 
+-- NOTE: Performance with dynamischen feldern eventuell besser
+-- Es muss aber nicht extrem performant sein.
+
+-- Schrittweise erklären wie die naive auf die performante kommt, nicht strikt
+-- mit funktionalen perlen aber doch erklärbar.
+
 -- TestSuite -------------------------------------------------------------------
 
 -- Asserts that two values are equal, otherwise prints an error message.
