@@ -96,19 +96,23 @@ istVollstaendigF arr = Empty `notElem` elements
 
 -- Task 4 ----------------------------------------------------------------------
 
-fillFirstInRowL :: Cell -> [Cell] -> [Cell]
-fillFirstInRowL _ [] = []
-fillFirstInRowL cell (Empty : fields) = cell : fields
-fillFirstInRowL cell (field : fields) = field : fillFirstInRowL cell fields
+-- Task 4 (Lists)
 
--- Fills the first empty field with the cell type specified
+-- Fills the first empty cell (and only the first cell) with the given cell.
+fillFirstEmptyInRowL :: Cell -> [Cell] -> [Cell]
+fillFirstEmptyInRowL _ [] = []
+fillFirstEmptyInRowL cell (Empty : fields) = cell : fields
+fillFirstEmptyInRowL cell (field : fields) = field : fillFirstEmptyInRowL cell fields
+
+-- Fills the first empty field with the cell type specified.
 fillFirstEmptyL :: Cell -> BinoxxoL -> BinoxxoL
 fillFirstEmptyL Empty _ = error "What are you doing?"
 fillFirstEmptyL cell (row : rows)
-  | any (== Empty) row = fillFirstInRowL cell row : rows
+  | any (== Empty) row = fillFirstEmptyInRowL cell row : rows
   | otherwise = row : fillFirstEmptyL cell rows
 
--- A version of listHasEqualXandO that respects empty
+-- A version of listHasEqualXandO that respects empty fields which might become
+-- X or O in the future.
 listPossiblyHasEqualXandO :: [Cell] -> Bool
 listPossiblyHasEqualXandO list = amountXs <= length_half && amountOs <= length_half
   where
@@ -116,6 +120,8 @@ listPossiblyHasEqualXandO list = amountXs <= length_half && amountOs <= length_h
     amountOs = length (filter (== O) list)
     length_half = length list `div` 2
 
+-- A version of maxTwoAdjacent that respects empty fields which might become
+-- X or O in the future.
 maxPossiblyTwoAdjacent :: [Cell] -> Bool
 maxPossiblyTwoAdjacent [] = True
 maxPossiblyTwoAdjacent [x] = True
@@ -153,7 +159,53 @@ loeseNaivL board
       (_, Just a) -> Just a
       _ -> Nothing
 
+-- Task 4 (Arrays)
+
+isPossiblyWfgF :: BinoxxoF -> Bool
+isPossiblyWfgF arr = wgf1 && wgf2 && wgf3
+  where
+    ((rowStart, columnStart), (rowSize, columnSize)) = bounds arr
+    rows = [[arr ! (i, j) | j <- [columnStart .. columnSize]] | i <- [rowStart .. rowSize]]
+    columns = transpose rows
+    wgf1 = all listPossiblyHasEqualXandO rows && all listPossiblyHasEqualXandO columns
+    wgf2 = distinct (filter (notElem Empty) rows) && distinct (filter (notElem Empty) columns)
+    wgf3 = all maxTwoAdjacent rows && all maxTwoAdjacent columns
+
+findFirstEmptyIndexF :: BinoxxoF -> Maybe Index
+findFirstEmptyIndexF arr =
+  case emptyElements of
+    [] -> Nothing
+    ((row, column), _) : _ -> Just (row, column)
+  where
+    emptyElements = filter (\((row, column), cell) -> cell == Empty) (assocs arr)
+
+fillFirstEmptyF :: Cell -> BinoxxoF -> BinoxxoF
+fillFirstEmptyF Empty _ = error "What are you doing?"
+fillFirstEmptyF cell arr =
+  case index of
+    Nothing -> error "WTF"
+    Just index -> arr // [(index, cell)]
+  where
+    index = findFirstEmptyIndexF arr
+
+loeseNaivF :: BinoxxoF -> Maybe BinoxxoF
+loeseNaivF board
+  | not (isPossiblyWfgF board) = Nothing
+  | istVollstaendigF board = Just board
+  | otherwise = result
+  where
+    filledWithCross = fillFirstEmptyF X board
+    continuedWithCross = loeseNaivF filledWithCross
+    filledWithCircle = fillFirstEmptyF O board
+    continuedWithCircle = loeseNaivF filledWithCircle
+    result = case (continuedWithCross, continuedWithCircle) of
+      (Just a, _) -> Just a
+      (_, Just a) -> Just a
+      _ -> Nothing
+
 -- Task 5 ----------------------------------------------------------------------
+
+-- Optimierungidee: Ungerade Anzahlen an Spalten/Reihen ist immer nicht lösbar
 
 -- NOTE: Performance with dynamischen feldern eventuell besser
 -- Es muss aber nicht extrem performant sein.
@@ -318,3 +370,31 @@ runTests = do
     "istVollstaendigF 4x4 invalid2"
     (istVollstaendigF (listArray ((1, 1), (4, 4)) [X, O, X, O, O, X, O, X, X, X, X, O, O, X, X, Empty]))
     False
+  assertEqual
+    "loeseNaivL 2x2 valid from empty"
+    (loeseNaivL [[Empty, Empty], [Empty, Empty]])
+    (Just [[X, O], [O, X]])
+  assertEqual
+    "loeseNaivL 2x2 invalid all x"
+    (loeseNaivL [[X, X], [X, X]])
+    (Nothing)
+  assertEqual
+    "loeseNaivL 2x2 invalid all x"
+    (loeseNaivL [[X, X], [X, X]])
+    (Nothing)
+  assertEqual
+    "loeseNaivL 4x4 valid two missing"
+    (loeseNaivL [[O, O, X, X], [X, O, O, X], [X, X, O, O], [Empty, X, Empty, O]])
+    (Just [[O, O, X, X], [X, O, O, X], [X, X, O, O], [O, X, X, O]])
+  assertEqual
+    "loeseNaivF 2x2 two Empty"
+    (loeseNaivF (listArray ((1, 1), (2, 2)) [O, X, Empty, Empty]))
+    (Just (array ((1, 1), (2, 2)) [((1, 1), O), ((1, 2), X), ((2, 1), X), ((2, 2), O)]))
+  assertEqual
+    "loeseNaivF 2x2 nothing Empty"
+    (loeseNaivF (listArray ((1, 1), (2, 2)) [O, X, X, O]))
+    (Just (array ((1, 1), (2, 2)) [((1, 1), O), ((1, 2), X), ((2, 1), X), ((2, 2), O)]))
+  assertEqual
+    "loeseNaivF 2x2 invalid - all X"
+    (loeseNaivF (listArray ((1, 1), (2, 2)) [X, X, X, X]))
+    (Nothing)
