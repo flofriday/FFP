@@ -57,11 +57,11 @@ listHasEqualXandO list = amountXs == amountOs
 
 maxTwoAdjacent :: [Cell] -> Bool
 maxTwoAdjacent [] = True
-maxTwoAdjacent [x] = True
-maxTwoAdjacent [x, y] = True
+maxTwoAdjacent [_] = True
+maxTwoAdjacent [_, _] = True
 maxTwoAdjacent (x : y : z : xs)
   | x == y && y == z = False
-  | otherwise = True
+  | otherwise = maxTwoAdjacent (y : z : xs)
 
 istWgfL :: BinoxxoL -> Bool
 istWgfL grid = wgf1 && wgf2 && wgf3
@@ -120,11 +120,12 @@ listPossiblyHasEqualXandO list = amountXs <= length_half && amountOs <= length_h
 -- X or O in the future.
 maxPossiblyTwoAdjacent :: [Cell] -> Bool
 maxPossiblyTwoAdjacent [] = True
-maxPossiblyTwoAdjacent [x] = True
-maxPossiblyTwoAdjacent [x, y] = True
+maxPossiblyTwoAdjacent [_] = True
+maxPossiblyTwoAdjacent [_, _] = True
+maxPossiblyTwoAdjacent (Empty : xs) = maxPossiblyTwoAdjacent xs
 maxPossiblyTwoAdjacent (x : y : z : xs)
-  | x /= Empty && y /= Empty && z /= Empty && x == y && y == z = False
-  | otherwise = True
+  | x == y && y == z = False
+  | otherwise = maxPossiblyTwoAdjacent (y : z : xs)
 
 -- A version which is a more relaxed istWgf but respects that some fields are
 -- empty and therefore can be either case.
@@ -135,7 +136,7 @@ isPossiblyWfgL grid = wgf1 && wgf2 && wgf3
     columns = transpose grid
     wgf1 = all listPossiblyHasEqualXandO rows && all listPossiblyHasEqualXandO columns
     wgf2 = distinct (filter (notElem Empty) rows) && distinct (filter (notElem Empty) columns)
-    wgf3 = all maxTwoAdjacent rows && all maxTwoAdjacent columns
+    wgf3 = all maxPossiblyTwoAdjacent rows && all maxPossiblyTwoAdjacent columns
 
 -- This solution iterates over all empty fields, randomly set's one of the two
 -- possibilities and and verifies it and uses some backtracking in case some
@@ -165,7 +166,7 @@ isPossiblyWfgF arr = wgf1 && wgf2 && wgf3
     columns = transpose rows
     wgf1 = all listPossiblyHasEqualXandO rows && all listPossiblyHasEqualXandO columns
     wgf2 = distinct (filter (notElem Empty) rows) && distinct (filter (notElem Empty) columns)
-    wgf3 = all maxTwoAdjacent rows && all maxTwoAdjacent columns
+    wgf3 = all maxPossiblyTwoAdjacent rows && all maxPossiblyTwoAdjacent columns
 
 findFirstEmptyIndexF :: BinoxxoF -> Maybe Index
 findFirstEmptyIndexF arr =
@@ -201,6 +202,65 @@ loeseNaivF board
 
 -- Task 5 ----------------------------------------------------------------------
 
+inverseOf :: Cell -> Cell
+inverseOf X = O
+inverseOf O = X
+
+fillDeterminedRow :: [Cell] -> (Bool, [Cell])
+fillDeterminedRow [] = (False, [])
+fillDeterminedRow [a] = (False, [a])
+fillDeterminedRow [a, b] = (False, [a, b])
+fillDeterminedRow (a : b : Empty : xs)
+  | a == b && a /= Empty = (True, a : snd (fillDeterminedRow (b : inverseOf b : xs)))
+  | otherwise = (restModified, a : rest)
+  where
+    (restModified, rest) = fillDeterminedRow (b : Empty : xs)
+fillDeterminedRow (a : b : c : xs) = (restModified, a : rest)
+  where
+    (restModified, rest) = fillDeterminedRow (b : c : xs)
+
+-- Nothing when no new cells have been filled
+fillDeterminedRows :: BinoxxoL -> Maybe BinoxxoL
+fillDeterminedRows board
+  | anyBoardModified = Just result
+  | otherwise = Nothing
+  where
+    fillRow row = if any (== Empty) row then fillDeterminedRow row else (False, row)
+    filledBoard = map fillRow board
+    anyBoardModified = any fst filledBoard
+    result = map snd filledBoard
+
+fillDeterminedCells :: BinoxxoL -> Maybe BinoxxoL
+fillDeterminedCells board = case fillDeterminedRows board of
+  (Just filledRows) -> case fillDeterminedRows (transpose filledRows) of
+    (Just filledColumns) -> Just (transpose filledColumns)
+    _ -> Just filledRows
+  _ -> case fillDeterminedRows (transpose board) of
+    (Just filledColumns) -> Just (transpose filledColumns)
+    _ -> Nothing
+
+-- Optimizatino 1: Filling constraind cells
+-- We can deterministically fill some cells since there is just one allowed
+-- solution. For example with X, X, Empty we know that only O is allowed in the
+-- Empty field. (From 2.99s to 2.47)
+loeseKomplexL :: BinoxxoL -> Maybe BinoxxoL
+loeseKomplexL board
+  | not (isPossiblyWfgL board) = Nothing
+  | istVollständigL board = Just board
+  | otherwise = result
+  where
+    filledWithCross = fillFirstEmptyL X board
+    continuedWithCross = loeseKomplexL filledWithCross
+    filledWithCircle = fillFirstEmptyL O board
+    continuedWithCircle = loeseKomplexL filledWithCircle
+    fallback = case (continuedWithCross, continuedWithCircle) of
+      (Just a, _) -> Just a
+      (_, Just a) -> Just a
+      _ -> Nothing
+    result = case fillDeterminedCells board of
+      (Just filledBoard) -> loeseKomplexL filledBoard
+      _ -> fallback
+
 -- Optimierungidee: Ungerade Anzahlen an Spalten/Reihen ist immer nicht lösbar
 
 -- NOTE: Performance with dynamischen feldern eventuell besser
@@ -227,6 +287,8 @@ assertContains testName haystack needle =
 -- Runs all tests
 
 {- ORMOLU_DISABLE -}
+
+-- The binoxxo 1 example from the assignment
 assignmentBinoxxo1L =
   [ [Empty, Empty, Empty,   X  , Empty,   X  , Empty,   O  , Empty, Empty],
     [Empty, Empty,   O  , Empty, Empty,   X  , Empty, Empty, Empty,   X  ],
@@ -241,6 +303,7 @@ assignmentBinoxxo1L =
   ]
 
 
+-- The binoxxo 2 example from the assignment
 assignmentBinoxxo2L =
   [ [Empty, Empty, Empty,   X  , Empty,   O  , Empty,   O  , Empty,   O  ],
     [Empty, Empty, Empty, Empty,   O  , Empty, Empty, Empty, Empty, Empty],
@@ -270,12 +333,12 @@ onlineBinoxxo1L =
     [X, X, O, O, X, O, X, X, O, O, X, O]
   ]
 
-listToArray :: [[a]] -> Array (Int, Int) a
-listToArray xss = array ((1, 1), (rowCount, colCount)) indices
+listToArray :: [[a]] -> Array (Nat1, Nat1) a
+listToArray xss = array ((1, 1), (toInteger rowCount, toInteger colCount)) indices
   where
     rowCount = length xss
     colCount = if rowCount > 0 then length (head xss) else 0
-    indices = [((i, j), xss !! i !! j) | i <- [0 .. rowCount - 1], j <- [0 .. colCount - 1]]
+    indices = [((toInteger (i + 1), toInteger (j + 1)), xss !! i !! j) | i <- [0 .. rowCount - 1], j <- [0 .. colCount - 1]]
 
 runTests :: IO ()
 runTests = do
@@ -296,7 +359,24 @@ runTests = do
     "generiereBinoxxoF3 basic case"
     (generiereBinoxxoF3 (2, 2) [((1, 1), X), ((1, 2), O), ((1, 1), O), ((2, 1), X), ((2, 2), Empty)])
     (array ((1, 1), (2, 2)) [((1, 1), O), ((1, 2), O), ((2, 1), X), ((2, 2), Empty)])
+
   -- Task 3 tests Lists--
+  assertEqual
+    "maxTwoAdjecent invalid three O at the end"
+    (maxTwoAdjacent [X, O, X, O, O, O])
+    False
+  assertEqual
+    "maxTwoAdjacent valid long row"
+    (maxTwoAdjacent [X, O, X, O, X, O, O, X, X, O])
+    True
+  assertEqual
+    "maxPossiblyTwoAdjecent invalid three O at the end"
+    (maxTwoAdjacent [X, O, X, O, O, O])
+    False
+  assertEqual
+    "maxPossiblyTwoAdjacent valid many emptys"
+    (maxPossiblyTwoAdjacent [X, O, X, Empty, Empty, Empty, Empty, O, O, X])
+    True
   assertEqual
     "istWgfL 2x2 valid1"
     (istWgfL [[X, O], [O, X]])
@@ -446,3 +526,15 @@ runTests = do
     "loeseNaivF 2x2 invalid - all X"
     (loeseNaivF (listArray ((1, 1), (2, 2)) [X, X, X, X]))
     (Nothing)
+  assertEqual
+    "maxPossiblyTwoAjacent with 4 adjecent Empty"
+    (maxPossiblyTwoAdjacent [X, Empty, Empty, Empty, Empty, X])
+    (True)
+  assertEqual
+    "loeseNaivL 4x4 all empty should be solveable"
+    (isJust (loeseNaivL [[Empty, Empty, Empty, Empty], [Empty, Empty, Empty, Empty], [Empty, Empty, Empty, Empty], [Empty, Empty, Empty, Empty]]))
+    (True)
+  assertEqual
+    "loeseNaivL Binoxxo1 from assignment should be solveable"
+    (isJust (loeseNaivL assignmentBinoxxo1L))
+    (True)
