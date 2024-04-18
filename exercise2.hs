@@ -1,7 +1,3 @@
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-
-{-# HLINT ignore "Eta reduce" #-}
-
 import Data.Array
 import Data.List
 import Data.Maybe
@@ -229,6 +225,58 @@ assertContains testName haystack needle =
     else printf "\x1b[31mfailed\x1b[0m %s\n\tExpected Containing: %s\n\tActual: %s\n" testName (show needle) (show haystack)
 
 -- Runs all tests
+
+{- ORMOLU_DISABLE -}
+assignmentBinoxxo1L =
+  [ [Empty, Empty, Empty,   X  , Empty,   X  , Empty,   O  , Empty, Empty],
+    [Empty, Empty,   O  , Empty, Empty,   X  , Empty, Empty, Empty,   X  ],
+    [Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,   X  ],
+    [Empty, Empty,   O  , Empty, Empty, Empty, Empty, Empty,   O  , Empty],
+    [Empty,   X  , Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty],
+    [Empty, Empty, Empty, Empty,   X  , Empty,   X  , Empty, Empty, Empty],
+    [Empty, Empty, Empty,   X  , Empty, Empty,   X  , Empty,   X  , Empty],
+    [Empty,   O  ,   O  , Empty, Empty,   O  , Empty, Empty, Empty, Empty],
+    [Empty, Empty, Empty, Empty,   X  ,   X  , Empty, Empty, Empty, Empty],
+    [Empty,   O  , Empty, Empty, Empty, Empty, Empty, Empty,   O  , Empty]
+  ]
+
+
+assignmentBinoxxo2L =
+  [ [Empty, Empty, Empty,   X  , Empty,   O  , Empty,   O  , Empty,   O  ],
+    [Empty, Empty, Empty, Empty,   O  , Empty, Empty, Empty, Empty, Empty],
+    [  X  ,   O  , Empty, Empty, Empty, Empty, Empty,   O  , Empty, Empty],
+    [Empty, Empty,   X  ,   X  , Empty, Empty, Empty,   O  ,   X  , Empty],
+    [Empty, Empty, Empty, Empty, Empty,   X  , Empty, Empty, Empty, Empty],
+    [  X  , Empty, Empty, Empty, Empty, Empty,   O  , Empty, Empty, Empty],
+    [Empty,   O  , Empty, Empty, Empty,   X  , Empty, Empty, Empty, Empty],
+    [Empty, Empty,   O  , Empty, Empty, Empty, Empty,   O  , Empty, Empty],
+    [  X  , Empty, Empty, Empty, Empty,   X  , Empty, Empty, Empty,   X  ],
+    [Empty,   O  , Empty,   O  , Empty, Empty,   X  , Empty, Empty, Empty]
+  ]
+{- ORMOLU_ENABLE -}
+
+onlineBinoxxo1L =
+  [ [X, O, O, X, O, X, O, O, X, O, X, X],
+    [O, O, X, O, X, X, O, O, X, X, O, X],
+    [X, X, O, X, O, O, X, X, O, X, O, O],
+    [X, O, O, X, O, X, X, O, X, O, X, O],
+    [O, X, X, O, X, O, O, X, X, O, O, X],
+    [O, X, X, O, O, X, O, X, O, X, O, X],
+    [X, O, O, X, X, O, X, O, O, X, X, O],
+    [O, O, X, O, O, X, O, X, X, O, X, X],
+    [X, X, O, X, X, O, X, O, O, X, O, O],
+    [O, O, X, X, O, O, X, X, O, X, O, X],
+    [O, X, X, O, X, X, O, O, X, O, X, O],
+    [X, X, O, O, X, O, X, X, O, O, X, O]
+  ]
+
+listToArray :: [[a]] -> Array (Int, Int) a
+listToArray xss = array ((1, 1), (rowCount, colCount)) indices
+  where
+    rowCount = length xss
+    colCount = if rowCount > 0 then length (head xss) else 0
+    indices = [((i, j), xss !! i !! j) | i <- [0 .. rowCount - 1], j <- [0 .. colCount - 1]]
+
 runTests :: IO ()
 runTests = do
   -- Task 2 tests --
