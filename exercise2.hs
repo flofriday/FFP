@@ -636,6 +636,18 @@ runTests = do
     loeseSmartL
     (createEmptyBinoxxoL 6)
   assertCorrectSolutionL
+    "loeseSmartL 8x8 all empty"
+    loeseSmartL
+    (createEmptyBinoxxoL 8)
+  assertCorrectSolutionL
+    "loeseSmartL 10x10 all empty (low-key flex)"
+    loeseSmartL
+    (createEmptyBinoxxoL 10)
+  assertCorrectSolutionL
+    "loeseSmartL 12x12 all empty (not so low-key flex)"
+    loeseSmartL
+    (createEmptyBinoxxoL 12)
+  assertCorrectSolutionL
     "loeseSmartL Binoxxo1 from assignment"
     loeseSmartL
     assignmentBinoxxo1L
