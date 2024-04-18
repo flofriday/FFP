@@ -254,11 +254,11 @@ replaceAll a b (x : xs)
 -- The count of X and O must be equal in each row. Therefore if one of them
 -- already reached there max, we can fill all empty cells with the other one.
 -- FIXME: either use it or and change it's signature
-collapseCountDeterminedRow :: [Cell] -> [Cell]
+collapseCountDeterminedRow :: [Cell] -> (Bool, [Cell])
 collapseCountDeterminedRow row
-  | numX >= rowSize / 2 = replaceAll Empty O row
-  | numO >= rowSize / 2 = replaceAll Empty X row
-  | otherwise = row
+  | numX >= rowSize `div` 2 = (True, replaceAll Empty O row)
+  | numO >= rowSize `div` 2 = (True, replaceAll Empty X row)
+  | otherwise = (False, row)
   where
     rowSize = length row
     numX = length (filter (== X) row)
@@ -270,12 +270,21 @@ collapseDeterminedRowsL board
   | anyBoardModified = Just result
   | otherwise = Nothing
   where
-    fillRow row = if any (== Empty) row then collapseAdjacentDeterminedRowL row else (False, row)
+    -- FIXME: God I hate this code
+    fillRow row =
+      if any (== Empty) row
+        then case collapseAdjacentDeterminedRowL row of
+          (modifiedAdjecent, newRow) -> case collapseCountDeterminedRow newRow of
+            (modifiedCount, finalRow) -> (modifiedAdjecent || modifiedCount, finalRow)
+        else (False, row)
     filledBoard = map fillRow board
     anyBoardModified = any fst filledBoard
     result = map snd filledBoard
 
+-- We apply all collapse rules once on all rows and than on all columns by
+-- transposing the grid first.
 collapseDeterminedCellsL :: BinoxxoL -> Maybe BinoxxoL
+-- FIXME: God this code is ugly
 collapseDeterminedCellsL board = case collapseDeterminedRowsL board of
   (Just filledRows) -> case collapseDeterminedRowsL (transpose filledRows) of
     (Just filledColumns) -> Just (transpose filledColumns)
