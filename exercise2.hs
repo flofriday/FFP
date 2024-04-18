@@ -215,35 +215,35 @@ inverseOf O = X
 --    X X Empty ==> X X O
 --    X Empty X ==> X O X
 --    Empty X X ==> O X X
-collapseAdjacentDeterminedRowL :: [Cell] -> (Bool, [Cell])
-collapseAdjacentDeterminedRowL [] = (False, [])
-collapseAdjacentDeterminedRowL [a] = (False, [a])
-collapseAdjacentDeterminedRowL [a, b] = (False, [a, b])
+collapseAdjacentDeterminedRowL :: [Cell] -> [Cell]
+collapseAdjacentDeterminedRowL [] = []
+collapseAdjacentDeterminedRowL [a] = [a]
+collapseAdjacentDeterminedRowL [a, b] = [a, b]
 -- The Rule: X X Empty ==> X X O
 collapseAdjacentDeterminedRowL (a : b : Empty : xs)
-  | a == b && a /= Empty = (True, a : snd (collapseAdjacentDeterminedRowL (b : inverseOf b : xs)))
-  | otherwise = (restModified, a : rest)
+  | a == b && a /= Empty = a : collapseAdjacentDeterminedRowL (b : inverseOf b : xs)
+  | otherwise = a : rest
   where
-    (restModified, rest) = collapseAdjacentDeterminedRowL (b : Empty : xs)
+    rest = collapseAdjacentDeterminedRowL (b : Empty : xs)
 
 -- The Rule: X Empty X ==> X O X
 collapseAdjacentDeterminedRowL (a : Empty : c : xs)
-  | a == c && a /= Empty = (True, a : snd (collapseAdjacentDeterminedRowL (inverseOf a : c : xs)))
-  | otherwise = (restModified, a : rest)
+  | a == c && a /= Empty = a : collapseAdjacentDeterminedRowL (inverseOf a : c : xs)
+  | otherwise = a : rest
   where
-    (restModified, rest) = collapseAdjacentDeterminedRowL (Empty : c : xs)
+    rest = collapseAdjacentDeterminedRowL (Empty : c : xs)
 
 -- The Rule: Empty X X ==> O X X
 collapseAdjacentDeterminedRowL (Empty : b : c : xs)
-  | b == c && b /= Empty = (True, inverseOf b : snd (collapseAdjacentDeterminedRowL (b : c : xs)))
-  | otherwise = (restModified, Empty : rest)
+  | b == c && b /= Empty = inverseOf b : collapseAdjacentDeterminedRowL (b : c : xs)
+  | otherwise = Empty : rest
   where
-    (restModified, rest) = collapseAdjacentDeterminedRowL (b : c : xs)
+    rest = collapseAdjacentDeterminedRowL (b : c : xs)
 
 -- No rule to apply, just keep the recursion alive
-collapseAdjacentDeterminedRowL (a : b : c : xs) = (restModified, a : rest)
+collapseAdjacentDeterminedRowL (a : b : c : xs) = a : rest
   where
-    (restModified, rest) = collapseAdjacentDeterminedRowL (b : c : xs)
+    rest = collapseAdjacentDeterminedRowL (b : c : xs)
 
 replaceAll :: (Eq a) => a -> a -> [a] -> [a]
 replaceAll _ _ [] = []
@@ -256,8 +256,8 @@ replaceAll a b (x : xs)
 -- FIXME: either use it or and change it's signature
 collapseCountDeterminedRow :: [Cell] -> [Cell]
 collapseCountDeterminedRow row
-  | numX >= rowSize / 2 = replaceAll Empty O row
-  | numO >= rowSize / 2 = replaceAll Empty X row
+  | numX >= rowSize `div` 2 = replaceAll Empty O row
+  | numO >= rowSize `div` 2 = replaceAll Empty X row
   | otherwise = row
   where
     rowSize = length row
@@ -265,29 +265,22 @@ collapseCountDeterminedRow row
     numO = length (filter (== O) row)
 
 -- Nothing when no new cells have been filled
-collapseDeterminedRowsL :: BinoxxoL -> Maybe BinoxxoL
-collapseDeterminedRowsL board
-  | anyBoardModified = Just result
-  | otherwise = Nothing
+collapseDeterminedRowsL :: BinoxxoL -> BinoxxoL
+collapseDeterminedRowsL board = filledBoard
   where
-    fillRow row = if any (== Empty) row then collapseAdjacentDeterminedRowL row else (False, row)
+    fillRow row = if Empty `elem` row then collapseAdjacentDeterminedRowL row else row
     filledBoard = map fillRow board
-    anyBoardModified = any fst filledBoard
-    result = map snd filledBoard
 
-collapseDeterminedCellsL :: BinoxxoL -> Maybe BinoxxoL
-collapseDeterminedCellsL board = case collapseDeterminedRowsL board of
-  (Just filledRows) -> case collapseDeterminedRowsL (transpose filledRows) of
-    (Just filledColumns) -> Just (transpose filledColumns)
-    _ -> Just filledRows
-  _ -> case collapseDeterminedRowsL (transpose board) of
-    (Just filledColumns) -> Just (transpose filledColumns)
-    _ -> Nothing
+collapseDeterminedCellsL :: BinoxxoL -> BinoxxoL
+collapseDeterminedCellsL board = filledColumns
+  where
+    filledRows = collapseDeterminedRowsL board
+    filledColumns = transpose (collapseDeterminedRowsL (transpose board))
 
 -- Optimizatino 1: Filling constraind cells
 -- We can deterministically fill some cells since there is just one allowed
 -- solution. For example with X, X, Empty we know that only O is allowed in the
--- Empty field. (From 2.99s to 2.47)
+-- Empty field. (From 2.99s to 0.31s)
 loeseSmartL :: BinoxxoL -> Maybe BinoxxoL
 loeseSmartL board
   | not (isPossiblyWfgL board) = Nothing
@@ -302,9 +295,11 @@ loeseSmartL board
       (Just a, _) -> Just a
       (_, Just a) -> Just a
       _ -> Nothing
-    result = case collapseDeterminedCellsL board of
-      (Just filledBoard) -> loeseSmartL filledBoard
-      _ -> fallback
+    collapsedBoard = collapseDeterminedCellsL board
+    result =
+      if collapsedBoard /= board
+        then loeseSmartL collapsedBoard
+        else fallback
 
 -- Optimierungidee: Ungerade Anzahlen an Spalten/Reihen ist immer nicht lösbar
 
