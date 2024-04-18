@@ -94,7 +94,7 @@ istVollstaendigF arr = Empty `notElem` elements
 
 -- Task 4 (Lists)
 
--- Fills the first empty cell (and only the first cell) with the given cell.
+-- Fills the first empty cell (and only the first cell) with the given value.
 fillFirstEmptyInRowL :: Cell -> [Cell] -> [Cell]
 fillFirstEmptyInRowL _ [] = []
 fillFirstEmptyInRowL cell (Empty : fields) = cell : fields
@@ -202,40 +202,85 @@ loeseNaivF board
 
 -- Task 5 ----------------------------------------------------------------------
 
+-- Somtimes we need to invert a cell
 inverseOf :: Cell -> Cell
 inverseOf X = O
 inverseOf O = X
 
-fillDeterminedRow :: [Cell] -> (Bool, [Cell])
-fillDeterminedRow [] = (False, [])
-fillDeterminedRow [a] = (False, [a])
-fillDeterminedRow [a, b] = (False, [a, b])
-fillDeterminedRow (a : b : Empty : xs)
-  | a == b && a /= Empty = (True, a : snd (fillDeterminedRow (b : inverseOf b : xs)))
+-- Rule three states that only two X and two O's can be adjacent, from that rule
+-- it is quite easy to determine that some cells need to be filled.
+-- Currently this implementation does the following filling inside a row
+-- (alsways looking at the first 3 elements and iterating over it.)
+-- Examples:
+--    X X Empty ==> X X O
+--    X Empty X ==> X O X
+--    Empty X X ==> O X X
+collapseAdjacentDeterminedRowL :: [Cell] -> (Bool, [Cell])
+collapseAdjacentDeterminedRowL [] = (False, [])
+collapseAdjacentDeterminedRowL [a] = (False, [a])
+collapseAdjacentDeterminedRowL [a, b] = (False, [a, b])
+-- The Rule: X X Empty ==> X X O
+collapseAdjacentDeterminedRowL (a : b : Empty : xs)
+  | a == b && a /= Empty = (True, a : snd (collapseAdjacentDeterminedRowL (b : inverseOf b : xs)))
   | otherwise = (restModified, a : rest)
   where
-    (restModified, rest) = fillDeterminedRow (b : Empty : xs)
-fillDeterminedRow (a : b : c : xs) = (restModified, a : rest)
+    (restModified, rest) = collapseAdjacentDeterminedRowL (b : Empty : xs)
+
+-- The Rule: X Empty X ==> X O X
+collapseAdjacentDeterminedRowL (a : Empty : c : xs)
+  | a == c && a /= Empty = (True, a : snd (collapseAdjacentDeterminedRowL (inverseOf a : c : xs)))
+  | otherwise = (restModified, a : rest)
   where
-    (restModified, rest) = fillDeterminedRow (b : c : xs)
+    (restModified, rest) = collapseAdjacentDeterminedRowL (Empty : c : xs)
+
+-- The Rule: Empty X X ==> O X X
+collapseAdjacentDeterminedRowL (Empty : b : c : xs)
+  | b == c && b /= Empty = (True, inverseOf b : snd (collapseAdjacentDeterminedRowL (b : c : xs)))
+  | otherwise = (restModified, Empty : rest)
+  where
+    (restModified, rest) = collapseAdjacentDeterminedRowL (b : c : xs)
+
+-- No rule to apply, just keep the recursion alive
+collapseAdjacentDeterminedRowL (a : b : c : xs) = (restModified, a : rest)
+  where
+    (restModified, rest) = collapseAdjacentDeterminedRowL (b : c : xs)
+
+replaceAll :: (Eq a) => a -> a -> [a] -> [a]
+replaceAll _ _ [] = []
+replaceAll a b (x : xs)
+  | a == x = b : replaceAll a b xs
+  | otherwise = x : replaceAll a b xs
+
+-- The count of X and O must be equal in each row. Therefore if one of them
+-- already reached there max, we can fill all empty cells with the other one.
+-- FIXME: either use it or and change it's signature
+collapseCountDeterminedRow :: [Cell] -> [Cell]
+collapseCountDeterminedRow row
+  | numX >= rowSize / 2 = replaceAll Empty O row
+  | numO >= rowSize / 2 = replaceAll Empty X row
+  | otherwise = row
+  where
+    rowSize = length row
+    numX = length (filter (== X) row)
+    numO = length (filter (== O) row)
 
 -- Nothing when no new cells have been filled
-fillDeterminedRows :: BinoxxoL -> Maybe BinoxxoL
-fillDeterminedRows board
+collapseDeterminedRowsL :: BinoxxoL -> Maybe BinoxxoL
+collapseDeterminedRowsL board
   | anyBoardModified = Just result
   | otherwise = Nothing
   where
-    fillRow row = if any (== Empty) row then fillDeterminedRow row else (False, row)
+    fillRow row = if any (== Empty) row then collapseAdjacentDeterminedRowL row else (False, row)
     filledBoard = map fillRow board
     anyBoardModified = any fst filledBoard
     result = map snd filledBoard
 
-fillDeterminedCells :: BinoxxoL -> Maybe BinoxxoL
-fillDeterminedCells board = case fillDeterminedRows board of
-  (Just filledRows) -> case fillDeterminedRows (transpose filledRows) of
+collapseDeterminedCellsL :: BinoxxoL -> Maybe BinoxxoL
+collapseDeterminedCellsL board = case collapseDeterminedRowsL board of
+  (Just filledRows) -> case collapseDeterminedRowsL (transpose filledRows) of
     (Just filledColumns) -> Just (transpose filledColumns)
     _ -> Just filledRows
-  _ -> case fillDeterminedRows (transpose board) of
+  _ -> case collapseDeterminedRowsL (transpose board) of
     (Just filledColumns) -> Just (transpose filledColumns)
     _ -> Nothing
 
@@ -243,22 +288,22 @@ fillDeterminedCells board = case fillDeterminedRows board of
 -- We can deterministically fill some cells since there is just one allowed
 -- solution. For example with X, X, Empty we know that only O is allowed in the
 -- Empty field. (From 2.99s to 2.47)
-loeseKomplexL :: BinoxxoL -> Maybe BinoxxoL
-loeseKomplexL board
+loeseSmartL :: BinoxxoL -> Maybe BinoxxoL
+loeseSmartL board
   | not (isPossiblyWfgL board) = Nothing
   | istVollständigL board = Just board
   | otherwise = result
   where
     filledWithCross = fillFirstEmptyL X board
-    continuedWithCross = loeseKomplexL filledWithCross
+    continuedWithCross = loeseSmartL filledWithCross
     filledWithCircle = fillFirstEmptyL O board
-    continuedWithCircle = loeseKomplexL filledWithCircle
+    continuedWithCircle = loeseSmartL filledWithCircle
     fallback = case (continuedWithCross, continuedWithCircle) of
       (Just a, _) -> Just a
       (_, Just a) -> Just a
       _ -> Nothing
-    result = case fillDeterminedCells board of
-      (Just filledBoard) -> loeseKomplexL filledBoard
+    result = case collapseDeterminedCellsL board of
+      (Just filledBoard) -> loeseSmartL filledBoard
       _ -> fallback
 
 -- Optimierungidee: Ungerade Anzahlen an Spalten/Reihen ist immer nicht lösbar
@@ -278,11 +323,34 @@ assertEqual testName actual expected =
     then putStrLn $ "\x1b[32mpassed\x1b[0m " ++ testName
     else printf "\x1b[31mfailed\x1b[0m %s\n\tExpected: %s\n\tActual: %s\n" testName (show expected) (show actual)
 
-assertContains :: (Eq a, Show a) => String -> [a] -> a -> IO ()
-assertContains testName haystack needle =
-  if isJust (find (== needle) haystack)
+type BinoxxoLSolver = BinoxxoL -> Maybe BinoxxoL
+
+-- Verifies that in each row the originally filled out cells still exist.
+containsOriginalRow :: ([Cell], [Cell]) -> Bool
+containsOriginalRow ([], []) = True
+containsOriginalRow (a : as, b : bs) =
+  if a /= b && a /= Empty
+    then False
+    else containsOriginalRow (as, bs)
+
+-- Verifies that all the originally filled out cells still exist.
+containsOriginalCellsL :: BinoxxoL -> BinoxxoL -> Bool
+containsOriginalCellsL original solution = all containsOriginalRow (zip original solution)
+
+-- Verifies that the solver
+--  1) finds a solution
+--  2) which is "wohlgeformt"
+--  3) keeps all original fields
+-- If any of the contraints are violated it prints an error message to stdout.
+assertCorrectSolutionL :: String -> BinoxxoLSolver -> BinoxxoL -> IO ()
+assertCorrectSolutionL testName solver input =
+  if correct
     then putStrLn $ "\x1b[32mpassed\x1b[0m " ++ testName
-    else printf "\x1b[31mfailed\x1b[0m %s\n\tExpected Containing: %s\n\tActual: %s\n" testName (show needle) (show haystack)
+    else printf "\x1b[31mfailed\x1b[0m %s\n\t%s\n" testName "Something went wrong..."
+  where
+    returned = solver input
+    (Just solution) = returned
+    correct = isJust returned && istWgfL solution && containsOriginalCellsL input solution
 
 -- Runs all tests
 
@@ -332,6 +400,10 @@ onlineBinoxxo1L =
     [O, X, X, O, X, X, O, O, X, O, X, O],
     [X, X, O, O, X, O, X, X, O, O, X, O]
   ]
+
+-- Creates an empty Binoxxo of the dimension nxn
+createEmptyBinoxxoL :: Int -> BinoxxoL
+createEmptyBinoxxoL n = (take n (repeat (take n (repeat Empty))))
 
 listToArray :: [[a]] -> Array (Nat1, Nat1) a
 listToArray xss = array ((1, 1), (toInteger rowCount, toInteger colCount)) indices
@@ -530,11 +602,35 @@ runTests = do
     "maxPossiblyTwoAjacent with 4 adjecent Empty"
     (maxPossiblyTwoAdjacent [X, Empty, Empty, Empty, Empty, X])
     (True)
-  assertEqual
-    "loeseNaivL 4x4 all empty should be solveable"
-    (isJust (loeseNaivL [[Empty, Empty, Empty, Empty], [Empty, Empty, Empty, Empty], [Empty, Empty, Empty, Empty], [Empty, Empty, Empty, Empty]]))
-    (True)
-  assertEqual
-    "loeseNaivL Binoxxo1 from assignment should be solveable"
-    (isJust (loeseNaivL assignmentBinoxxo1L))
-    (True)
+  assertCorrectSolutionL
+    "loeseNaivL 4x4 all empty (might take a while)"
+    loeseNaivL
+    (createEmptyBinoxxoL 4)
+  assertCorrectSolutionL
+    "loeseNaivL 6x6 all empty (might take a while)"
+    loeseNaivL
+    (createEmptyBinoxxoL 6)
+  assertCorrectSolutionL
+    "loeseNaivL Binoxxo1 from assignment"
+    loeseNaivL
+    assignmentBinoxxo1L
+  assertCorrectSolutionL
+    "loeseNaivL Binoxxo2 from assignment"
+    loeseNaivL
+    assignmentBinoxxo2L
+  assertCorrectSolutionL
+    "loeseSmartL 4x4 all empty"
+    loeseSmartL
+    (createEmptyBinoxxoL 4)
+  assertCorrectSolutionL
+    "loeseSmartL 6x6 all empty"
+    loeseSmartL
+    (createEmptyBinoxxoL 6)
+  assertCorrectSolutionL
+    "loeseSmartL Binoxxo1 from assignment"
+    loeseSmartL
+    assignmentBinoxxo1L
+  assertCorrectSolutionL
+    "loeseSmartL Binoxxo2 from assignment"
+    loeseSmartL
+    assignmentBinoxxo2L
