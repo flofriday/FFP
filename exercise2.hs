@@ -579,6 +579,7 @@ runTests = do
     "istVollstaendigF 4x4 invalid2"
     (istVollstaendigF (listArray ((1, 1), (4, 4)) [X, O, X, O, O, X, O, X, X, X, X, O, O, X, X, Empty]))
     False
+  -- Task 4 tests --
   assertEqual
     "loeseNaivL 2x2 valid from empty"
     (loeseNaivL [[Empty, Empty], [Empty, Empty]])
@@ -627,6 +628,7 @@ runTests = do
     "loeseNaivL Binoxxo2 from assignment"
     loeseNaivL
     assignmentBinoxxo2L
+  -- Task 5 tests --
   assertCorrectSolutionL
     "loeseSmartL 4x4 all empty"
     loeseSmartL
