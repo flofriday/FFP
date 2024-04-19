@@ -347,9 +347,7 @@ type BinoxxoLSolver = BinoxxoL -> Maybe BinoxxoL
 containsOriginalRow :: ([Cell], [Cell]) -> Bool
 containsOriginalRow ([], []) = True
 containsOriginalRow (a : as, b : bs) =
-  if a /= b && a /= Empty
-    then False
-    else containsOriginalRow (as, bs)
+  (a == b || a == Empty || b == Empty) && containsOriginalRow (as, bs)
 
 -- Verifies that all the originally filled out cells still exist.
 containsOriginalCellsL :: BinoxxoL -> BinoxxoL -> Bool
