@@ -220,6 +220,7 @@ collapseAdjacentDeterminedRowL [] = (False, [])
 collapseAdjacentDeterminedRowL [a] = (False, [a])
 collapseAdjacentDeterminedRowL [a, b] = (False, [a, b])
 -- The Rule: X X Empty ==> X X O
+--           O O Empty ==> O O X
 collapseAdjacentDeterminedRowL (a : b : Empty : xs)
   | a == b && a /= Empty = (True, a : snd (collapseAdjacentDeterminedRowL (b : inverseOf b : xs)))
   | otherwise = (restModified, a : rest)
@@ -227,6 +228,7 @@ collapseAdjacentDeterminedRowL (a : b : Empty : xs)
     (restModified, rest) = collapseAdjacentDeterminedRowL (b : Empty : xs)
 
 -- The Rule: X Empty X ==> X O X
+--           O Empty O ==> O X O
 collapseAdjacentDeterminedRowL (a : Empty : c : xs)
   | a == c && a /= Empty = (True, a : snd (collapseAdjacentDeterminedRowL (inverseOf a : c : xs)))
   | otherwise = (restModified, a : rest)
@@ -234,6 +236,7 @@ collapseAdjacentDeterminedRowL (a : Empty : c : xs)
     (restModified, rest) = collapseAdjacentDeterminedRowL (Empty : c : xs)
 
 -- The Rule: Empty X X ==> O X X
+--           Empty O O ==> X O O
 collapseAdjacentDeterminedRowL (Empty : b : c : xs)
   | b == c && b /= Empty = (True, inverseOf b : snd (collapseAdjacentDeterminedRowL (b : c : xs)))
   | otherwise = (restModified, Empty : rest)
@@ -264,7 +267,8 @@ collapseCountDeterminedRow row
     numX = length (filter (== X) row)
     numO = length (filter (== O) row)
 
--- Nothing when no new cells have been filled
+-- "Nothing" when no new cells have been filled
+-- Returns "Just BinoxxoL" when the board has been changed
 collapseDeterminedRowsL :: BinoxxoL -> Maybe BinoxxoL
 collapseDeterminedRowsL board
   | anyBoardModified = Just result
