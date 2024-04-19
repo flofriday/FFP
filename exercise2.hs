@@ -267,20 +267,26 @@ collapseCountDeterminedRow row
     numX = length (filter (== X) row)
     numO = length (filter (== O) row)
 
--- "Nothing" when no new cells have been filled
--- Returns "Just BinoxxoL" when the board has been changed
+-- Checks if a row can be filled by an optimization. Returns (True, row) if it
+-- could fill any symbol of the row. Otherwise it returns (False, row) where
+-- row would be the original unchanged row.
+fillRow :: [Cell] -> (Bool, [Cell])
+fillRow row
+  | Empty `elem` row && isCollapsed = (isCollapsed, finalRow)
+  | otherwise = (False, row)
+  where
+    (modifiedAdjecent, newRow) = collapseAdjacentDeterminedRowL row
+    (modifiedCount, finalRow) = collapseCountDeterminedRow newRow
+    isCollapsed = modifiedAdjecent || modifiedCount
+
+-- Returns "Nothing" when no new cells have been filled
+-- Returns "Just BinoxxoL" when the board has been changed, where BinoxxoL
+--         would be the new changed board
 collapseDeterminedRowsL :: BinoxxoL -> Maybe BinoxxoL
 collapseDeterminedRowsL board
   | anyBoardModified = Just result
   | otherwise = Nothing
   where
-    -- FIXME: God I hate this code
-    fillRow row =
-      if any (== Empty) row
-        then case collapseAdjacentDeterminedRowL row of
-          (modifiedAdjecent, newRow) -> case collapseCountDeterminedRow newRow of
-            (modifiedCount, finalRow) -> (modifiedAdjecent || modifiedCount, finalRow)
-        else (False, row)
     filledBoard = map fillRow board
     anyBoardModified = any fst filledBoard
     result = map snd filledBoard
