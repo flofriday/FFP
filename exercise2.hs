@@ -11,6 +11,7 @@ distinct [] = True
 distinct (x : xs) = x `notElem` xs && distinct xs
 
 -- Task 1 ----------------------------------------------------------------------
+-- MARK: Task 1
 type Nat1 = Integer
 
 type Index = (Nat1, Nat1)
@@ -29,10 +30,13 @@ type BinoxxoL = [[Cell]]
 
 type BinoxxoF = Array Index Cell
 
+type BinoxxoFRow = Array Nat1 Cell
+
 lengthAsInteger :: [a] -> Integer
 lengthAsInteger x = toInteger (length x)
 
 -- Task 2 ----------------------------------------------------------------------
+-- MARK: Task 2
 generiereBinoxxoL :: Index -> BinoxxoL -> BinoxxoL
 generiereBinoxxoL (rows, cols) cells = cells
 
@@ -48,6 +52,7 @@ generiereBinoxxoF3 :: Index -> [(Index, Cell)] -> BinoxxoF
 generiereBinoxxoF3 (rows, cols) cells = accumArray (\a b -> b) Empty ((1, 1), (rows, cols)) cells
 
 -- Task 3 ----------------------------------------------------------------------
+-- MARK: Task 3
 
 listHasEqualXandO :: [Cell] -> Bool
 listHasEqualXandO list = amountXs == amountOs
@@ -82,17 +87,16 @@ istWgfF arr = wgf1 && wgf2 && wgf3
     wgf2 = distinct rows && distinct columns
     wgf3 = all maxTwoAdjacent rows && all maxTwoAdjacent columns
 
-istVollständigL :: BinoxxoL -> Bool
-istVollständigL grid = all (Empty `notElem`) grid
+istVollstaendigL :: BinoxxoL -> Bool
+istVollstaendigL grid = all (Empty `notElem`) grid
 
 istVollstaendigF :: BinoxxoF -> Bool
 istVollstaendigF arr = Empty `notElem` elements
   where
     elements = elems arr
 
--- Task 4 ----------------------------------------------------------------------
-
--- Task 4 (Lists)
+-- Task 4 (Lists) ----------------------------------------------------------------------
+-- MARK: Task 4 (Lists)
 
 -- Fills the first empty cell (and only the first cell) with the given value.
 fillFirstEmptyInRowL :: Cell -> [Cell] -> [Cell]
@@ -144,7 +148,7 @@ isPossiblyWfgL grid = wgf1 && wgf2 && wgf3
 loeseNaivL :: BinoxxoL -> Maybe BinoxxoL
 loeseNaivL board
   | not (isPossiblyWfgL board) = Nothing
-  | istVollständigL board = Just board
+  | istVollstaendigL board = Just board
   | otherwise = result
   where
     filledWithCross = fillFirstEmptyL X board
@@ -156,7 +160,8 @@ loeseNaivL board
       (_, Just a) -> Just a
       _ -> Nothing
 
--- Task 4 (Arrays)
+-- Task 4 (Arrays) ----------------------------------------------------------------------
+-- MARK: Task 4 (Arrays)
 
 isPossiblyWfgF :: BinoxxoF -> Bool
 isPossiblyWfgF arr = wgf1 && wgf2 && wgf3
@@ -200,7 +205,8 @@ loeseNaivF board
       (_, Just a) -> Just a
       _ -> Nothing
 
--- Task 5 ----------------------------------------------------------------------
+-- Task 5 (Lists) ----------------------------------------------------------------------
+-- MARK: Task 5 (Lists)
 
 -- Somtimes we need to invert a cell
 inverseOf :: Cell -> Cell
@@ -270,8 +276,8 @@ collapseCountDeterminedRow row
 -- Checks if a row can be filled by an optimization. Returns (True, row) if it
 -- could fill any symbol of the row. Otherwise it returns (False, row) where
 -- row would be the original unchanged row.
-fillRow :: [Cell] -> (Bool, [Cell])
-fillRow row
+fillRowL :: [Cell] -> (Bool, [Cell])
+fillRowL row
   | Empty `elem` row && isCollapsed = (isCollapsed, finalRow)
   | otherwise = (False, row)
   where
@@ -287,7 +293,7 @@ collapseDeterminedRowsL board
   | anyBoardModified = Just result
   | otherwise = Nothing
   where
-    filledBoard = map fillRow board
+    filledBoard = map fillRowL board
     anyBoardModified = any fst filledBoard
     result = map snd filledBoard
 
@@ -309,7 +315,7 @@ collapseDeterminedCellsL board
 loeseSmartL :: BinoxxoL -> Maybe BinoxxoL
 loeseSmartL board
   | not (isPossiblyWfgL board) = Nothing
-  | istVollständigL board = Just board
+  | istVollstaendigL board = Just board
   | otherwise = result
   where
     filledWithCross = fillFirstEmptyL X board
@@ -332,6 +338,85 @@ loeseSmartL board
 -- Schrittweise erklären wie die naive auf die performante kommt, nicht strikt
 -- mit funktionalen perlen aber doch erklärbar.
 
+-- Task 5 (Arrays) ----------------------------------------------------------------------
+-- MARK: Task 5 (Arrays)
+
+transposeArray :: Array (Nat1, Nat1) a -> Array (Nat1, Nat1) a
+transposeArray arr = array transposedBounds [((c, r), arr ! (r, c)) | r <- [rowStart .. rowEnd], c <- [colStart .. colEnd]]
+  where
+    ((rowStart, colStart), (rowEnd, colEnd)) = bounds arr
+    transposedBounds = ((colStart, rowStart), (colEnd, rowEnd))
+
+listOfArrayTo2DArray :: [Array Nat1 Cell] -> Array (Nat1, Nat1) Cell
+listOfArrayTo2DArray arrays = array ((1, 1), (toInteger rowCount, toInteger colCount)) indices
+  where
+    rowCount = length arrays
+    colCount = rangeSize (bounds (head arrays))
+    indices = [((toInteger r, toInteger c), arrays !! (r - 1) ! toInteger c) | r <- [1 .. rowCount], c <- [1 .. colCount]]
+
+getRowF :: BinoxxoF -> Nat1 -> BinoxxoFRow
+getRowF board rowIndex = result
+  where
+    ((rowStart, colStart), (rowEnd, colEnd)) = bounds board
+    row = [board ! (rowIndex, colIndex) | colIndex <- [colStart .. colEnd]]
+    result = listArray (rowStart, rowEnd) row
+
+-- Checks if a row can be filled by an optimization. Returns (True, row) if it
+-- could fill any symbol of the row. Otherwise it returns (False, row) where
+-- row would be the original unchanged row.
+fillRowF :: BinoxxoFRow -> Nat1 -> (Bool, BinoxxoFRow)
+fillRowF arrayRow rowId
+  | Empty `elem` rowElements && isCollapsed = (isCollapsed, listArray index finalRow)
+  | otherwise = (False, arrayRow)
+  where
+    index = bounds arrayRow
+    rowElements = elems arrayRow
+    (modifiedAdjecent, newRow) = collapseAdjacentDeterminedRowL rowElements
+    (modifiedCount, finalRow) = collapseCountDeterminedRow newRow
+    isCollapsed = modifiedAdjecent || modifiedCount
+
+-- Returns "Nothing" when no new cells have been filled
+-- Returns "Just BinoxxoL" when the board has been changed, where BinoxxoL
+--         would be the new changed board
+collapseDeterminedRowsF :: BinoxxoF -> Maybe BinoxxoF
+collapseDeterminedRowsF board
+  | anyBoardModified = Just result
+  | otherwise = Nothing
+  where
+    ((rowStart, colStart), (rowEnd, colEnd)) = bounds board
+    filledRows = [fillRowF (getRowF board rowIndex) rowIndex | rowIndex <- [rowStart .. rowEnd]]
+    anyBoardModified = any fst filledRows
+    result = listOfArrayTo2DArray (map snd filledRows)
+
+-- We apply all collapse rules once on all rows and than on all columns by
+-- transposing the grid first.
+collapseDeterminedCellsF :: BinoxxoF -> Maybe BinoxxoF
+collapseDeterminedCellsF board
+  | Just filledRows <- collapseDeterminedRowsF board,
+    Just filledColumns <- collapseDeterminedRowsF (transposeArray filledRows) =
+      Just (transposeArray filledColumns)
+  | Just filledColumns <- collapseDeterminedRowsF (transposeArray board) =
+      Just (transposeArray filledColumns)
+  | otherwise = Nothing
+
+loeseSmartF :: BinoxxoF -> Maybe BinoxxoF
+loeseSmartF board
+  | not (isPossiblyWfgF board) = Nothing
+  | istVollstaendigF board = Just board
+  | otherwise = result
+  where
+    filledWithCross = fillFirstEmptyF X board
+    continuedWithCross = loeseSmartF filledWithCross
+    filledWithCircle = fillFirstEmptyF O board
+    continuedWithCircle = loeseSmartF filledWithCircle
+    fallback = case (continuedWithCross, continuedWithCircle) of
+      (Just a, _) -> Just a
+      (_, Just a) -> Just a
+      _ -> Nothing
+    result = case collapseDeterminedCellsF board of
+      (Just filledBoard) -> loeseSmartF filledBoard
+      _ -> fallback
+
 -- TestSuite -------------------------------------------------------------------
 
 -- Asserts that two values are equal, otherwise prints an error message.
@@ -343,6 +428,8 @@ assertEqual testName actual expected =
 
 type BinoxxoLSolver = BinoxxoL -> Maybe BinoxxoL
 
+type BinoxxoFSolver = BinoxxoF -> Maybe BinoxxoF
+
 -- Verifies that in each row the originally filled out cells still exist.
 containsOriginalRow :: ([Cell], [Cell]) -> Bool
 containsOriginalRow ([], []) = True
@@ -352,6 +439,13 @@ containsOriginalRow (a : as, b : bs) =
 -- Verifies that all the originally filled out cells still exist.
 containsOriginalCellsL :: BinoxxoL -> BinoxxoL -> Bool
 containsOriginalCellsL original solution = all containsOriginalRow (zip original solution)
+
+almostEqual :: [Cell] -> [Cell] -> Bool
+almostEqual [] [] = True
+almostEqual (x : xs) (y : ys) = (x == y || x == Empty || y == Empty) && almostEqual xs ys
+
+containsOriginalCellsF :: BinoxxoF -> BinoxxoF -> Bool
+containsOriginalCellsF original solution = almostEqual (elems original) (elems solution)
 
 -- Verifies that the solver
 --  1) finds a solution
@@ -368,7 +462,18 @@ assertCorrectSolutionL testName solver input =
     (Just solution) = returned
     correct = isJust returned && istWgfL solution && containsOriginalCellsL input solution
 
+assertCorrectSolutionF :: String -> BinoxxoFSolver -> BinoxxoF -> IO ()
+assertCorrectSolutionF testName solver input =
+  if correct
+    then putStrLn $ "\x1b[32mpassed\x1b[0m " ++ testName
+    else printf "\x1b[31mfailed\x1b[0m %s\n\t%s\n" testName "Something went wrong..."
+  where
+    returned = solver input
+    (Just solution) = returned
+    correct = isJust returned && istWgfF solution && containsOriginalCellsF input solution
+
 -- Runs all tests
+-- MARK: Tests
 
 {- ORMOLU_DISABLE -}
 
@@ -386,6 +491,8 @@ assignmentBinoxxo1L =
     [Empty,   O  , Empty, Empty, Empty, Empty, Empty, Empty,   O  , Empty]
   ]
 
+assignmentBinoxxo1F = listToArray assignmentBinoxxo1L
+
 
 -- The binoxxo 2 example from the assignment
 assignmentBinoxxo2L =
@@ -400,6 +507,7 @@ assignmentBinoxxo2L =
     [  X  , Empty, Empty, Empty, Empty,   X  , Empty, Empty, Empty,   X  ],
     [Empty,   O  , Empty,   O  , Empty, Empty,   X  , Empty, Empty, Empty]
   ]
+assignmentBinoxxo2F = listToArray assignmentBinoxxo2L
 {- ORMOLU_ENABLE -}
 
 onlineBinoxxo1L =
@@ -421,6 +529,9 @@ onlineBinoxxo1L =
 createEmptyBinoxxoL :: Int -> BinoxxoL
 createEmptyBinoxxoL n = (take n (repeat (take n (repeat Empty))))
 
+createEmptyBinoxxoF :: Int -> BinoxxoF
+createEmptyBinoxxoF n = listToArray (createEmptyBinoxxoL n)
+
 listToArray :: [[a]] -> Array (Nat1, Nat1) a
 listToArray xss = array ((1, 1), (toInteger rowCount, toInteger colCount)) indices
   where
@@ -430,7 +541,7 @@ listToArray xss = array ((1, 1), (toInteger rowCount, toInteger colCount)) indic
 
 runTests :: IO ()
 runTests = do
-  -- Task 2 tests --
+  -- MARK: Task 2 tests --
   assertEqual
     "generiereBinoxxoL basic case"
     (generiereBinoxxoL (2, 2) [[X, O], [X, Empty]])
@@ -448,7 +559,7 @@ runTests = do
     (generiereBinoxxoF3 (2, 2) [((1, 1), X), ((1, 2), O), ((1, 1), O), ((2, 1), X), ((2, 2), Empty)])
     (array ((1, 1), (2, 2)) [((1, 1), O), ((1, 2), O), ((2, 1), X), ((2, 2), Empty)])
 
-  -- Task 3 tests Lists--
+  -- MARK: Task 3 tests Lists--
   assertEqual
     "maxTwoAdjecent invalid three O at the end"
     (maxTwoAdjacent [X, O, X, O, O, O])
@@ -503,29 +614,29 @@ runTests = do
     False
   assertEqual
     "istVollständigL 2x2 valid1"
-    (istVollständigL [[O, O], [O, O]])
+    (istVollstaendigL [[O, O], [O, O]])
     True
   assertEqual
     "istVollständigL 2x2 invalid1"
-    (istVollständigL [[O, Empty], [O, O]])
+    (istVollstaendigL [[O, Empty], [O, O]])
     False
   assertEqual
     "istVollständigL 2x2 invalid2"
-    (istVollständigL [[O, O], [O, Empty]])
+    (istVollstaendigL [[O, O], [O, Empty]])
     False
   assertEqual
     "istVollständigL 4x4 valid1"
-    (istVollständigL [[X, O, X, O], [O, X, O, X], [X, X, X, O], [O, X, X, O]])
+    (istVollstaendigL [[X, O, X, O], [O, X, O, X], [X, X, X, O], [O, X, X, O]])
     True
   assertEqual
     "istVollständigL 4x4 invalid1"
-    (istVollständigL [[X, O, X, O], [O, X, O, X], [X, X, X, Empty], [O, X, X, O]])
+    (istVollstaendigL [[X, O, X, O], [O, X, O, X], [X, X, X, Empty], [O, X, X, O]])
     False
   assertEqual
     "istVollständigL 4x4 invalid2"
-    (istVollständigL [[X, O, X, O], [O, X, O, X], [X, X, X, O], [O, X, X, Empty]])
+    (istVollstaendigL [[X, O, X, O], [O, X, O, X], [X, X, X, O], [O, X, X, Empty]])
     False
-  -- Task 3 tests Fields/Arrays--
+  -- MARK: Task 3 tests Fields/Arrays--
   assertEqual
     "istWgfF 2x2 valid1"
     (istWgfF (listArray ((1, 1), (2, 2)) [X, O, O, X]))
@@ -586,7 +697,7 @@ runTests = do
     "istVollstaendigF 4x4 invalid2"
     (istVollstaendigF (listArray ((1, 1), (4, 4)) [X, O, X, O, O, X, O, X, X, X, X, O, O, X, X, Empty]))
     False
-  -- Task 4 tests --
+  -- MARK: Task 4 tests --
   assertEqual
     "loeseNaivL 2x2 valid from empty"
     (loeseNaivL [[Empty, Empty], [Empty, Empty]])
@@ -635,7 +746,7 @@ runTests = do
     "loeseNaivL Binoxxo2 from assignment"
     loeseNaivL
     assignmentBinoxxo2L
-  -- Task 5 tests --
+  -- MARK: Task 5 (List) Tests --
   assertCorrectSolutionL
     "loeseSmartL 4x4 all empty"
     loeseSmartL
@@ -664,3 +775,32 @@ runTests = do
     "loeseSmartL Binoxxo2 from assignment"
     loeseSmartL
     assignmentBinoxxo2L
+  -- MARK: Task 5 (Array) tests --
+  assertCorrectSolutionF
+    "loeseSmartF 4x4 all empty"
+    loeseSmartF
+    (createEmptyBinoxxoF 4)
+  assertCorrectSolutionF
+    "loeseSmartF 6x6 all empty"
+    loeseSmartF
+    (createEmptyBinoxxoF 6)
+  assertCorrectSolutionF
+    "loeseSmartF 8x8 all empty"
+    loeseSmartF
+    (createEmptyBinoxxoF 8)
+  assertCorrectSolutionF
+    "loeseSmartF 10x10 all empty (low-key flex)"
+    loeseSmartF
+    (createEmptyBinoxxoF 10)
+  assertCorrectSolutionF
+    "loeseSmartF 12x12 all empty (not so low-key flex)"
+    loeseSmartF
+    (createEmptyBinoxxoF 12)
+  assertCorrectSolutionF
+    "loeseSmartF Binoxxo1 from assignment"
+    loeseSmartF
+    assignmentBinoxxo1F
+  assertCorrectSolutionF
+    "loeseSmartF Binoxxo2 from assignment"
+    loeseSmartF
+    assignmentBinoxxo2F
