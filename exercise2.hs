@@ -294,14 +294,13 @@ collapseDeterminedRowsL board
 -- We apply all collapse rules once on all rows and than on all columns by
 -- transposing the grid first.
 collapseDeterminedCellsL :: BinoxxoL -> Maybe BinoxxoL
--- FIXME: God this code is ugly
-collapseDeterminedCellsL board = case collapseDeterminedRowsL board of
-  (Just filledRows) -> case collapseDeterminedRowsL (transpose filledRows) of
-    (Just filledColumns) -> Just (transpose filledColumns)
-    _ -> Just filledRows
-  _ -> case collapseDeterminedRowsL (transpose board) of
-    (Just filledColumns) -> Just (transpose filledColumns)
-    _ -> Nothing
+collapseDeterminedCellsL board
+  | Just filledRows <- collapseDeterminedRowsL board,
+    Just filledColumns <- collapseDeterminedRowsL (transpose filledRows) =
+      Just (transpose filledColumns)
+  | Just filledColumns <- collapseDeterminedRowsL (transpose board) =
+      Just (transpose filledColumns)
+  | otherwise = Nothing
 
 -- Optimizatino 1: Filling constraind cells
 -- We can deterministically fill some cells since there is just one allowed
