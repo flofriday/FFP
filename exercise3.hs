@@ -52,7 +52,7 @@ topLevel p input
     results = [ found | (found, []) <- p input ]
 
 parser :: Parse Char (Maybe String)
-
+parser _ = []
 
 none :: Parse a b
 none _ = []
