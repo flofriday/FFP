@@ -1,4 +1,6 @@
 -- Task 3 ----------------------------------------------------------------------
+
+import Data.List
 import Test.QuickCheck
 
 -- MARK: Part 1
@@ -38,51 +40,64 @@ prop_quotientSmalleThanEpsilon i = actualDifference <= epsilon
     goldenRatio = (1 + sqrt 5) / 2
     actualDifference = abs (fibQuot - goldenRatio)
 
-
-
 -- MARK: Parser
-type Parse a b = [a] -> [(b,[a])]
+type Parse1 a b = [a] -> [(b, [a])]
 
-topLevel :: Parse a b -> [a] -> b
-topLevel p input
-  = case results of
+topLevel1 :: Parse1 a b -> [a] -> b
+topLevel1 parser input =
+  case results of
     [] -> error "parse unsuccessful"
     _ -> head results
   where
-    results = [ found | (found, []) <- p input ]
+    results = [found | (found, []) <- parser input]
 
-parser :: Parse Char (Maybe String)
-parser _ = []
+parser1 :: Parse1 Char (Maybe String)
+parser1 input = []
 
-none :: Parse a b
+none :: Parse1 a b
 none _ = []
 
-succeed :: b -> Parse a b
-succeed val inp = [(val,inp)]
+succeed :: b -> Parse1 a b
+succeed val inp = [(val, inp)]
 
-token :: Eq a => a -> Parse a a
-token t (x:xs)
-  | t == x = [(t,xs)]
+token :: (Eq a) => a -> Parse1 a a
+token t (x : xs)
+  | t == x = [(t, xs)]
   | otherwise = []
 token t [] = []
 
-spot :: (a -> Bool) -> Parse a a
-spot p (x:xs)
-  | p x = [(x,xs)]
+spot :: (a -> Bool) -> Parse1 a a
+spot p (x : xs)
+  | p x = [(x, xs)]
   | otherwise = []
 spot p [] = []
 
-alt :: Parse a b -> Parse a b -> Parse a b
+--
+
+alt :: Parse1 a b -> Parse1 a b -> Parse1 a b
 alt p1 p2 input = p1 input ++ p2 input
 
-(>*>) :: Parse a b -> Parse a c -> Parse a (b,c)
-(>*>) p1 p2 input = [((y,z),rem2) | (y,rem1) <- p1 input,(z,rem2) <- p2 rem1 ]
+(>*>) :: Parse1 a b -> Parse1 a c -> Parse1 a (b, c)
+(>*>) p1 p2 input = [((y, z), rem2) | (y, rem1) <- p1 input, (z, rem2) <- p2 rem1]
 
-build :: Parse a b -> (b -> c) -> Parse a c
-build p f input = [ (f x,rem) | (x,rem) <- p input ]
+build :: Parse1 a b -> (b -> c) -> Parse1 a c
+build p f input = [(f x, rem) | (x, rem) <- p input]
 
+-- End of definitions
+-- Define a parser for terminals
+terminalParser :: (Eq a) => [a] -> Parse1 a [a]
+terminalParser t (x : xs)
+  | t `isPrefixOf` (x : xs) = [(t, drop (length t) (x : xs))]
+  | otherwise = []
+terminalParser _ [] = []
 
--- topLevel parser "PROGRAM someName SKIP"
+programParser :: Parse1 Char (Maybe String)
+programParser = terminalParser "PROGRAM" `build` Just
+
+programNameParser :: Parse1 Char (Maybe String)
+programNameParser _ = []
+
+-- topLevel1 parser1 "PROGRAM someName SKIP"
 
 -- Runs all tests
 -- MARK: Tests
