@@ -1,7 +1,9 @@
 -- Task 3 ----------------------------------------------------------------------
 
+import Data.Char
 import Data.List
 import Test.QuickCheck
+import Text.Printf
 
 -- MARK: Part 1
 
@@ -76,6 +78,11 @@ spot p (x : xs)
   | otherwise = []
 spot p [] = []
 
+list :: Parse1 a b -> Parse1 a [b]
+list p =
+  (succeed [])
+    `alt` ((p >*> list p) `build` (uncurry (:)))
+
 --
 
 -- Combining parser alterantives
@@ -90,29 +97,64 @@ build :: Parse1 a b -> (b -> c) -> Parse1 a c
 build p f input = [(f x, rem) | (x, rem) <- p input]
 
 -- End of definitions
+
+-- Custom definitions
+follows :: Parse1 Char String -> Parse1 Char String -> Parse1 Char String
+follows p1 p2 = (p1 >*> p2) `build` uncurry (++)
+
+buildNothing :: Parse1 Char String -> Parse1 Char String
+buildNothing p input = [("", rem) | (x, rem) <- p input]
+
 -- Define a parser for terminals
-terminalParser :: [Char] -> Parse1 Char (Maybe String)
-terminalParser t (x : xs)
-  | t `isPrefixOf` (x : xs) = [(Just t, drop (length t) (x : xs))]
-  | otherwise = [(Nothing, [])]
-terminalParser _ [] = [(Nothing, [])]
+terminalParser :: [Char] -> Parse1 Char String
+terminalParser target input
+  | target `isPrefixOf` input = [(target, drop (length target) input)]
+  | otherwise = none input
 
-programParser :: Parse1 Char (Maybe String)
-programParser = terminalParser "PROGRAM"
+programParser :: Parse1 Char String
+programParser = buildNothing (terminalParser "PROGRAM" `follows` programNameParser) `follows` buildNothing (terminalParser ".")
 
--- programParser = terminalParser "PROGRAM" `build` Just
+programNameParser :: Parse1 Char String
+programNameParser = upperCharParser `follows` charDigSeq
 
-programNameParser :: Parse1 Char (Maybe String)
-programNameParser _ = []
+charParser :: Parse1 Char String
+charParser = spot isAsciiLower `build` (\a -> [a])
+
+upperCharParser :: Parse1 Char String
+upperCharParser = spot isAsciiUpper `build` (\a -> [a])
+
+digParser :: Parse1 Char String
+digParser = spot isDigit `build` (\a -> [a])
+
+charDigSeq :: Parse1 Char String
+charDigSeq = list (alt charParser digParser `build` \[a] -> a)
+
+--
+{- skipParser :: Parse1 Char String
+skipParser = terminalParser "SKIP"
+
+statementParser :: Parse1 Char String
+statementParser =
+  skipParser
+    `alt` assignmentParser
+    `alt` ifParser
+    `alt` whileParser
+    `alt` (terminalParser "BEGIN" `follows` statementSeqParser `follows` terminalParser "END") -}
 
 -- topLevel1 parser1 "PROGRAM someName SKIP"
 
 -- Runs all tests
--- MARK: Tests
--- runTests :: IO ()
--- runTests = do
--- MARK: Task 3 tests --
---  assertEqual
---    "generiereBinoxxoL basic case"
---    (generiereBinoxxoL (2, 2) [[X, O], [X, Empty]])
---    [[X, O], [X, Empty]]
+-- MARK : Tests
+assertEqual :: (Eq a, Show a) => String -> a -> a -> IO ()
+assertEqual testName actual expected =
+  if actual == expected
+    then putStrLn $ "\x1b[32mpassed\x1b[0m " ++ testName
+    else printf "\x1b[31mfailed\x1b[0m %s\n\tExpected: %s\n\tActual: %s\n" testName (show expected) (show actual)
+
+runTests :: IO ()
+runTests = do
+  -- MARK: Task 2 tests --
+  assertEqual
+    "programParser \"PROGRAMFlo.\""
+    (programParser "PROGRAMFlo.")
+    [("", "")]
