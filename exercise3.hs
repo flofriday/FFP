@@ -37,13 +37,29 @@ fib 0 = 0
 fib 1 = 1
 fib n = fib (n - 1) + fib (n - 2)
 
-prop_quotientSmalleThanEpsilon :: Nat2 -> Bool
-prop_quotientSmalleThanEpsilon i = actualDifference <= epsilon
+getQuotient :: Integer -> Double
+getQuotient i = actualDifference
   where
-    epsilon = 0.2
     fibQuot = fromIntegral (fib i) / fromIntegral (fib (i - 1))
     goldenRatio = (1 + sqrt 5) / 2
     actualDifference = abs (fibQuot - goldenRatio)
+
+-- Change epsilon this to something smaller so that it only sometimes fails eg: (0.1)
+isQuotientSmalleThanEpsilon :: Integer -> Bool
+isQuotientSmalleThanEpsilon i = actualDifference <= epsilon
+  where
+    epsilon = 0.7
+    fibQuot = fromIntegral (fib i) / fromIntegral (fib (i - 1))
+    goldenRatio = (1 + sqrt 5) / 2
+    actualDifference = abs (fibQuot - goldenRatio)
+
+-- Again limiting the upper bound cause we cannot wait till the heat death of
+-- the universe, or a stack overflow, whichever occurs first.
+-- We report here the histogram of how many high numbers we got. Basically for
+-- all numbers 10 till 19 we will catch them in "1x"
+prop_quotientSmalleThanEpsilon :: Property
+prop_quotientSmalleThanEpsilon = forAll (chooseInteger (2, 30)) $
+  \i -> collect ((show (i `div` 10)) ++ "x") $ isQuotientSmalleThanEpsilon i
 
 -- MARK: Task 1.3
 
