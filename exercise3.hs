@@ -23,11 +23,13 @@ f n = sum [f n | n <- [0 .. (n - 1)]]
 f' :: Nat2 -> Nat1
 f' n = 2 ^ (n - 2)
 
-biggerOrEqualTo :: Nat0 -> Nat0 -> Bool
-biggerOrEqualTo n lowerLimit = n >= lowerLimit
+trivial p = classify p "trivial"
 
-prop_equationalEquality :: Nat2 -> Property
-prop_equationalEquality n = biggerOrEqualTo n 2 ==> f n == f' n
+-- Limiting the upper bound as otherwise the testing might run for ever
+prop_equationalEquality :: Property
+prop_equationalEquality = forAll (chooseInteger (2, 20)) $ \n -> trivial (n < 3) $ f n == f' n
+
+-- Run with: quickCheck prop_equationalEquality
 
 -- MARK: Task 1.2
 fib :: Nat0 -> Nat0
@@ -42,6 +44,8 @@ prop_quotientSmalleThanEpsilon i = actualDifference <= epsilon
     fibQuot = fromIntegral (fib i) / fromIntegral (fib (i - 1))
     goldenRatio = (1 + sqrt 5) / 2
     actualDifference = abs (fibQuot - goldenRatio)
+
+-- MARK: Task 1.3
 
 -- MARK: Parser
 type Parse1 a b = [a] -> [(b, [a])]
