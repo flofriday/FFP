@@ -334,9 +334,12 @@ genSolveableBoard = genBoard `suchThat` isSolveable
 
 -- Reports the sizes of the inputs
 prop_binoxxoSmartSolve :: Property
-prop_binoxxoSmartSolve = forAll genSolveableBoard $ \b -> collect (round (sqrt (fromIntegral (numElements b)))) $ case loeseSmartF b of
+prop_binoxxoSmartSolve = forAll genSolveableBoard $ \b -> collect (formatCollect b) $ case loeseSmartF b of
   Just b -> istWgfF b
   Nothing -> error "Generated not solveable input"
+  where
+    boardSize b = (round (sqrt (fromIntegral (numElements b))))
+    formatCollect b = (show (boardSize b)) ++ "x" ++ (show (boardSize b))
 
 -- Run with:rquickCheck prop_binoxxoSmartSolve
 
