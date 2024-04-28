@@ -1,7 +1,10 @@
 -- Task 3 ----------------------------------------------------------------------
 import Data.Array
+import Data.Array.Base (IArray (numElements))
 import Data.Char
 import Data.List
+import Data.Maybe
+import GHC.Integer.GMP.Internals (sqrInteger)
 import GHC.Real (reduce)
 import GHC.Utils.Binary (Bin)
 import Test.QuickCheck
@@ -60,7 +63,7 @@ isQuotientSmallerThanEpsilon i = actualDifference <= epsilon
 -- all numbers 10 till 19 we will catch them in "1x"
 prop_quotientSmallerThanEpsilon :: Property
 prop_quotientSmallerThanEpsilon = forAll (chooseInteger (2, 30)) $
-  \i -> collect ((show (i `div` 10)) ++ "x") $ isQuotientSmallerThanEpsilon i
+  \i -> collect (show (i `div` 10) ++ "x") $ isQuotientSmallerThanEpsilon i
 
 -- Run with: quickCheck prop_quotientSmallerThanEpsilon
 
@@ -84,11 +87,27 @@ type BinoxxoF = Array Index Cell
 type BinoxxoFRow = Array Nat1 Cell
 
 generiereBinoxxoF2 :: Index -> [Cell] -> BinoxxoF
-generiereBinoxxoF2 (rows, cols) cells = listArray ((1, 1), (rows, cols)) cells
+generiereBinoxxoF2 (rows, cols) = listArray ((1, 1), (rows, cols))
 
 distinct :: (Eq a) => [a] -> Bool
 distinct [] = True
 distinct (x : xs) = x `notElem` xs && distinct xs
+
+listHasEqualXandO :: [Cell] -> Bool
+listHasEqualXandO list = amountXs == amountOs
+  where
+    amountXs = length (filter (== X) list)
+    amountOs = length (filter (== O) list)
+
+istWgfF :: BinoxxoF -> Bool
+istWgfF arr = wgf1 && wgf2 && wgf3
+  where
+    ((rowStart, columnStart), (rowSize, columnSize)) = bounds arr
+    rows = [[arr ! (i, j) | j <- [columnStart .. columnSize]] | i <- [rowStart .. rowSize]]
+    columns = transpose rows
+    wgf1 = all listHasEqualXandO rows && all listHasEqualXandO columns
+    wgf2 = distinct rows && distinct columns
+    wgf3 = all maxTwoAdjacent rows && all maxTwoAdjacent columns
 
 istVollstaendigF :: BinoxxoF -> Bool
 istVollstaendigF arr = Empty `notElem` elements
@@ -276,7 +295,7 @@ loeseSmartF board
       _ -> fallback
 
 createEmptyBinoxxoL :: Int -> BinoxxoL
-createEmptyBinoxxoL n = (take n (repeat (take n (repeat Empty))))
+createEmptyBinoxxoL n = take n (repeat (take n (repeat Empty)))
 
 createEmptyBinoxxoF :: Int -> BinoxxoF
 createEmptyBinoxxoF n = listToArray (createEmptyBinoxxoL n)
@@ -292,18 +311,32 @@ listToArray xss = array ((1, 1), (toInteger rowCount, toInteger colCount)) indic
 
 -- Given an input size this function creates a board to solve.
 -- The input must be a postive even number.
--- A fourth of the fields will be X anotherforth O and the half Empty.
-gen_board :: Int -> Gen BinoxxoF
-gen_board n = fmap (generiereBinoxxoF2 (toInteger n, toInteger n)) cellList
+-- A eight of the fields will be X another with O and the rest Empty.
+genBoardOfSize :: Int -> Gen BinoxxoF
+genBoardOfSize n = fmap (generiereBinoxxoF2 (toInteger n, toInteger n)) cellList
   where
     count = n * n
-    oCount = fromIntegral (count `div` 4)
-    xCount = count `div` 4
+    oCount = fromIntegral (count `div` 8)
+    xCount = count `div` 8
     eCount = count - oCount - xCount
-    cellList = shuffle (take xCount (repeat X) ++ take oCount (repeat O) ++ take eCount (repeat Empty))
+    cellList = shuffle (replicate xCount X ++ replicate oCount O ++ replicate eCount Empty)
 
--- prop_binoxxoSmartSolve :: Property
--- prop_binoxxoSmartSolve = forAll (chooseInteger (4, 4)) $ \n -> chooseInteger (n, 4) $ \x -> x == x
+genBoard :: Gen BinoxxoF
+genBoard = do
+  n <- elements [i * 2 | i <- [1 .. 5]]
+  genBoardOfSize n
+
+-- We only want to generate solveable instances
+genSolveableBoard :: Gen BinoxxoF
+genSolveableBoard = genBoard `suchThat` isSolveable
+  where
+    isSolveable = \b -> isJust (loeseSmartF b)
+
+-- Reports the sizes of the inputs
+prop_binoxxoSmartSolve :: Property
+prop_binoxxoSmartSolve = forAll genSolveableBoard $ \b -> collect (round (sqrt (fromIntegral (numElements b)))) $ case loeseSmartF b of
+  Just b -> istWgfF b
+  Nothing -> error "Generated not solveable input"
 
 -- Run with:rquickCheck prop_binoxxoSmartSolve
 
@@ -346,8 +379,8 @@ spot p [] = []
 --
 list :: Parse1 a b -> Parse1 a [b]
 list p =
-  (succeed [])
-    `alt` ((p >*> list p) `build` (uncurry (:)))
+  succeed []
+    `alt` ((p >*> list p) `build` uncurry (:))
 
 --
 
@@ -373,7 +406,7 @@ buildNothing p input = [("", rem) | (x, rem) <- p input]
 
 -- MARK: Parser
 -- Define a parser for terminals
-terminalParser :: [Char] -> Parse1 Char String
+terminalParser :: String -> Parse1 Char String
 terminalParser target input
   | target `isPrefixOf` input = [(target, drop (length target) input)]
   | otherwise = none input
@@ -385,13 +418,13 @@ programNameParser :: Parse1 Char String
 programNameParser = upperCharParser `follows` charDigSeq
 
 charParser :: Parse1 Char String
-charParser = spot isAsciiLower `build` (\a -> [a])
+charParser = spot isAsciiLower `build` ((: []))
 
 upperCharParser :: Parse1 Char String
-upperCharParser = spot isAsciiUpper `build` (\a -> [a])
+upperCharParser = spot isAsciiUpper `build` ((: []))
 
 digParser :: Parse1 Char String
-digParser = spot isDigit `build` (\a -> [a])
+digParser = spot isDigit `build` ((: []))
 
 charDigSeq :: Parse1 Char String
 charDigSeq = list (alt charParser digParser `build` \[a] -> a)
