@@ -1,5 +1,6 @@
 -- Task 3 ----------------------------------------------------------------------
 
+import Data.Array
 import Data.Char
 import Data.List
 import GHC.Real (reduce)
@@ -45,8 +46,8 @@ getQuotient i = actualDifference
     actualDifference = abs (fibQuot - goldenRatio)
 
 -- Change epsilon this to something smaller so that it only sometimes fails eg: (0.1)
-isQuotientSmalleThanEpsilon :: Integer -> Bool
-isQuotientSmalleThanEpsilon i = actualDifference <= epsilon
+isQuotientSmallerThanEpsilon :: Integer -> Bool
+isQuotientSmallerThanEpsilon i = actualDifference <= epsilon
   where
     epsilon = 0.7
     fibQuot = fromIntegral (fib i) / fromIntegral (fib (i - 1))
@@ -57,13 +58,236 @@ isQuotientSmalleThanEpsilon i = actualDifference <= epsilon
 -- the universe, or a stack overflow, whichever occurs first.
 -- We report here the histogram of how many high numbers we got. Basically for
 -- all numbers 10 till 19 we will catch them in "1x"
-prop_quotientSmalleThanEpsilon :: Property
-prop_quotientSmalleThanEpsilon = forAll (chooseInteger (2, 30)) $
-  \i -> collect ((show (i `div` 10)) ++ "x") $ isQuotientSmalleThanEpsilon i
+prop_quotientSmallerThanEpsilon :: Property
+prop_quotientSmallerThanEpsilon = forAll (chooseInteger (2, 30)) $
+  \i -> collect ((show (i `div` 10)) ++ "x") $ isQuotientSmallerThanEpsilon i
+
+-- Run with: quickCheck prop_quotientSmallerThanEpsilon
 
 -- MARK: Task 1.3
 
--- MARK: Parser
+-- Definitions from exercise 2
+type Index = (Nat1, Nat1)
+
+data Cell = X | O | Empty deriving (Show)
+
+instance Eq Cell where
+  (==) X X = True
+  (==) O O = True
+  (==) Empty Empty = True
+  (==) _ _ = False
+
+type BinoxxoL = [[Cell]]
+
+type BinoxxoF = Array Index Cell
+
+type BinoxxoFRow = Array Nat1 Cell
+
+distinct :: (Eq a) => [a] -> Bool
+distinct [] = True
+distinct (x : xs) = x `notElem` xs && distinct xs
+
+istVollstaendigF :: BinoxxoF -> Bool
+istVollstaendigF arr = Empty `notElem` elements
+  where
+    elements = elems arr
+
+maxPossiblyTwoAdjacent :: [Cell] -> Bool
+maxPossiblyTwoAdjacent [] = True
+maxPossiblyTwoAdjacent [_] = True
+maxPossiblyTwoAdjacent [_, _] = True
+maxPossiblyTwoAdjacent (Empty : xs) = maxPossiblyTwoAdjacent xs
+maxPossiblyTwoAdjacent (x : y : z : xs)
+  | x == y && y == z = False
+  | otherwise = maxPossiblyTwoAdjacent (y : z : xs)
+
+maxTwoAdjacent :: [Cell] -> Bool
+maxTwoAdjacent [] = True
+maxTwoAdjacent [_] = True
+maxTwoAdjacent [_, _] = True
+maxTwoAdjacent (x : y : z : xs)
+  | x == y && y == z = False
+  | otherwise = maxTwoAdjacent (y : z : xs)
+
+listPossiblyHasEqualXandO :: [Cell] -> Bool
+listPossiblyHasEqualXandO list = amountXs <= length_half && amountOs <= length_half
+  where
+    amountXs = length (filter (== X) list)
+    amountOs = length (filter (== O) list)
+    length_half = length list `div` 2
+
+isPossiblyWfgF :: BinoxxoF -> Bool
+isPossiblyWfgF arr = wgf1 && wgf2 && wgf3
+  where
+    ((rowStart, columnStart), (rowSize, columnSize)) = bounds arr
+    rows = [[arr ! (i, j) | j <- [columnStart .. columnSize]] | i <- [rowStart .. rowSize]]
+    columns = transpose rows
+    wgf1 = all listPossiblyHasEqualXandO rows && all listPossiblyHasEqualXandO columns
+    wgf2 = distinct (filter (notElem Empty) rows) && distinct (filter (notElem Empty) columns)
+    wgf3 = all maxPossiblyTwoAdjacent rows && all maxPossiblyTwoAdjacent columns
+
+findFirstEmptyIndexF :: BinoxxoF -> Maybe Index
+findFirstEmptyIndexF arr =
+  case emptyElements of
+    [] -> Nothing
+    ((row, column), _) : _ -> Just (row, column)
+  where
+    emptyElements = filter (\((row, column), cell) -> cell == Empty) (assocs arr)
+
+fillFirstEmptyF :: Cell -> BinoxxoF -> BinoxxoF
+fillFirstEmptyF Empty _ = error "What are you doing?"
+fillFirstEmptyF cell arr =
+  case index of
+    Nothing -> error "WTF"
+    Just index -> arr // [(index, cell)]
+  where
+    index = findFirstEmptyIndexF arr
+
+inverseOf :: Cell -> Cell
+inverseOf X = O
+inverseOf O = X
+
+collapseAdjacentDeterminedRowL :: [Cell] -> (Bool, [Cell])
+collapseAdjacentDeterminedRowL [] = (False, [])
+collapseAdjacentDeterminedRowL [a] = (False, [a])
+collapseAdjacentDeterminedRowL [a, b] = (False, [a, b])
+collapseAdjacentDeterminedRowL (a : b : Empty : xs)
+  | a == b && a /= Empty = (True, a : snd (collapseAdjacentDeterminedRowL (b : inverseOf b : xs)))
+  | otherwise = (restModified, a : rest)
+  where
+    (restModified, rest) = collapseAdjacentDeterminedRowL (b : Empty : xs)
+collapseAdjacentDeterminedRowL (a : Empty : c : xs)
+  | a == c && a /= Empty = (True, a : snd (collapseAdjacentDeterminedRowL (inverseOf a : c : xs)))
+  | otherwise = (restModified, a : rest)
+  where
+    (restModified, rest) = collapseAdjacentDeterminedRowL (Empty : c : xs)
+collapseAdjacentDeterminedRowL (Empty : b : c : xs)
+  | b == c && b /= Empty = (True, inverseOf b : snd (collapseAdjacentDeterminedRowL (b : c : xs)))
+  | otherwise = (restModified, Empty : rest)
+  where
+    (restModified, rest) = collapseAdjacentDeterminedRowL (b : c : xs)
+collapseAdjacentDeterminedRowL (a : b : c : xs) = (restModified, a : rest)
+  where
+    (restModified, rest) = collapseAdjacentDeterminedRowL (b : c : xs)
+
+replaceAll :: (Eq a) => a -> a -> [a] -> [a]
+replaceAll _ _ [] = []
+replaceAll a b (x : xs)
+  | a == x = b : replaceAll a b xs
+  | otherwise = x : replaceAll a b xs
+
+collapseCountDeterminedRow :: [Cell] -> (Bool, [Cell])
+collapseCountDeterminedRow row
+  | numX >= rowSize `div` 2 = (True, replaceAll Empty O row)
+  | numO >= rowSize `div` 2 = (True, replaceAll Empty X row)
+  | otherwise = (False, row)
+  where
+    rowSize = length row
+    numX = length (filter (== X) row)
+    numO = length (filter (== O) row)
+
+fillRowL :: [Cell] -> (Bool, [Cell])
+fillRowL row
+  | Empty `elem` row && isCollapsed = (isCollapsed, finalRow)
+  | otherwise = (False, row)
+  where
+    (modifiedAdjecent, newRow) = collapseAdjacentDeterminedRowL row
+    (modifiedCount, finalRow) = collapseCountDeterminedRow newRow
+    isCollapsed = modifiedAdjecent || modifiedCount
+
+collapseDeterminedRowsL :: BinoxxoL -> Maybe BinoxxoL
+collapseDeterminedRowsL board
+  | anyBoardModified = Just result
+  | otherwise = Nothing
+  where
+    filledBoard = map fillRowL board
+    anyBoardModified = any fst filledBoard
+    result = map snd filledBoard
+
+transposeArray :: Array (Nat1, Nat1) a -> Array (Nat1, Nat1) a
+transposeArray arr = array transposedBounds [((c, r), arr ! (r, c)) | r <- [rowStart .. rowEnd], c <- [colStart .. colEnd]]
+  where
+    ((rowStart, colStart), (rowEnd, colEnd)) = bounds arr
+    transposedBounds = ((colStart, rowStart), (colEnd, rowEnd))
+
+listOfArrayTo2DArray :: [Array Nat1 Cell] -> Array (Nat1, Nat1) Cell
+listOfArrayTo2DArray arrays = array ((1, 1), (toInteger rowCount, toInteger colCount)) indices
+  where
+    rowCount = length arrays
+    colCount = rangeSize (bounds (head arrays))
+    indices = [((toInteger r, toInteger c), arrays !! (r - 1) ! toInteger c) | r <- [1 .. rowCount], c <- [1 .. colCount]]
+
+getRowF :: BinoxxoF -> Nat1 -> BinoxxoFRow
+getRowF board rowIndex = result
+  where
+    ((rowStart, colStart), (rowEnd, colEnd)) = bounds board
+    row = [board ! (rowIndex, colIndex) | colIndex <- [colStart .. colEnd]]
+    result = listArray (rowStart, rowEnd) row
+
+fillRowF :: BinoxxoFRow -> Nat1 -> (Bool, BinoxxoFRow)
+fillRowF arrayRow rowId
+  | Empty `elem` rowElements && isCollapsed = (isCollapsed, listArray index finalRow)
+  | otherwise = (False, arrayRow)
+  where
+    index = bounds arrayRow
+    rowElements = elems arrayRow
+    (modifiedAdjecent, newRow) = collapseAdjacentDeterminedRowL rowElements
+    (modifiedCount, finalRow) = collapseCountDeterminedRow newRow
+    isCollapsed = modifiedAdjecent || modifiedCount
+
+collapseDeterminedRowsF :: BinoxxoF -> Maybe BinoxxoF
+collapseDeterminedRowsF board
+  | anyBoardModified = Just result
+  | otherwise = Nothing
+  where
+    ((rowStart, colStart), (rowEnd, colEnd)) = bounds board
+    filledRows = [fillRowF (getRowF board rowIndex) rowIndex | rowIndex <- [rowStart .. rowEnd]]
+    anyBoardModified = any fst filledRows
+    result = listOfArrayTo2DArray (map snd filledRows)
+
+collapseDeterminedCellsF :: BinoxxoF -> Maybe BinoxxoF
+collapseDeterminedCellsF board
+  | Just filledRows <- collapseDeterminedRowsF board,
+    Just filledColumns <- collapseDeterminedRowsF (transposeArray filledRows) =
+      Just (transposeArray filledColumns)
+  | Just filledColumns <- collapseDeterminedRowsF (transposeArray board) =
+      Just (transposeArray filledColumns)
+  | otherwise = Nothing
+
+loeseSmartF :: BinoxxoF -> Maybe BinoxxoF
+loeseSmartF board
+  | not (isPossiblyWfgF board) = Nothing
+  | istVollstaendigF board = Just board
+  | otherwise = result
+  where
+    filledWithCross = fillFirstEmptyF X board
+    continuedWithCross = loeseSmartF filledWithCross
+    filledWithCircle = fillFirstEmptyF O board
+    continuedWithCircle = loeseSmartF filledWithCircle
+    fallback = case (continuedWithCross, continuedWithCircle) of
+      (Just a, _) -> Just a
+      (_, Just a) -> Just a
+      _ -> Nothing
+    result = case collapseDeterminedCellsF board of
+      (Just filledBoard) -> loeseSmartF filledBoard
+      _ -> fallback
+
+createEmptyBinoxxoL :: Int -> BinoxxoL
+createEmptyBinoxxoL n = (take n (repeat (take n (repeat Empty))))
+
+createEmptyBinoxxoF :: Int -> BinoxxoF
+createEmptyBinoxxoF n = listToArray (createEmptyBinoxxoL n)
+
+listToArray :: [[a]] -> Array (Nat1, Nat1) a
+listToArray xss = array ((1, 1), (toInteger rowCount, toInteger colCount)) indices
+  where
+    rowCount = length xss
+    colCount = if rowCount > 0 then length (head xss) else 0
+    indices = [((toInteger (i + 1), toInteger (j + 1)), xss !! i !! j) | i <- [0 .. rowCount - 1], j <- [0 .. colCount - 1]]
+
+-- MARK: 1.3 Implementation
+
+-- MARK: Task2
 type Parse1 a b = [a] -> [(b, [a])]
 
 topLevel1 :: Parse1 a b -> [a] -> b
@@ -120,13 +344,14 @@ build p f input = [(f x, rem) | (x, rem) <- p input]
 
 -- End of definitions
 
--- Custom definitions
+-- MARK: Custom definitions
 follows :: Parse1 Char String -> Parse1 Char String -> Parse1 Char String
 follows p1 p2 = (p1 >*> p2) `build` uncurry (++)
 
 buildNothing :: Parse1 Char String -> Parse1 Char String
 buildNothing p input = [("", rem) | (x, rem) <- p input]
 
+-- MARK: Parser
 -- Define a parser for terminals
 terminalParser :: [Char] -> Parse1 Char String
 terminalParser target input
