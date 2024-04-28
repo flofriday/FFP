@@ -1,9 +1,9 @@
 -- Task 3 ----------------------------------------------------------------------
-
 import Data.Array
 import Data.Char
 import Data.List
 import GHC.Real (reduce)
+import GHC.Utils.Binary (Bin)
 import Test.QuickCheck
 import Text.Printf
 
@@ -82,6 +82,9 @@ type BinoxxoL = [[Cell]]
 type BinoxxoF = Array Index Cell
 
 type BinoxxoFRow = Array Nat1 Cell
+
+generiereBinoxxoF2 :: Index -> [Cell] -> BinoxxoF
+generiereBinoxxoF2 (rows, cols) cells = listArray ((1, 1), (rows, cols)) cells
 
 distinct :: (Eq a) => [a] -> Bool
 distinct [] = True
@@ -286,6 +289,23 @@ listToArray xss = array ((1, 1), (toInteger rowCount, toInteger colCount)) indic
     indices = [((toInteger (i + 1), toInteger (j + 1)), xss !! i !! j) | i <- [0 .. rowCount - 1], j <- [0 .. colCount - 1]]
 
 -- MARK: 1.3 Implementation
+
+-- Given an input size this function creates a board to solve.
+-- The input must be a postive even number.
+-- A fourth of the fields will be X anotherforth O and the half Empty.
+gen_board :: Int -> Gen BinoxxoF
+gen_board n = fmap (generiereBinoxxoF2 (toInteger n, toInteger n)) cellList
+  where
+    count = n * n
+    oCount = fromIntegral (count `div` 4)
+    xCount = count `div` 4
+    eCount = count - oCount - xCount
+    cellList = shuffle (take xCount (repeat X) ++ take oCount (repeat O) ++ take eCount (repeat Empty))
+
+-- prop_binoxxoSmartSolve :: Property
+-- prop_binoxxoSmartSolve = forAll (chooseInteger (4, 4)) $ \n -> chooseInteger (n, 4) $ \x -> x == x
+
+-- Run with:rquickCheck prop_binoxxoSmartSolve
 
 -- MARK: Task2
 type Parse1 a b = [a] -> [(b, [a])]
