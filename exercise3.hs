@@ -2,6 +2,7 @@
 
 import Data.Char
 import Data.List
+import GHC.Real (reduce)
 import Test.QuickCheck
 import Text.Printf
 
@@ -78,6 +79,7 @@ spot p (x : xs)
   | otherwise = []
 spot p [] = []
 
+--
 list :: Parse1 a b -> Parse1 a [b]
 list p =
   (succeed [])
@@ -112,7 +114,7 @@ terminalParser target input
   | otherwise = none input
 
 programParser :: Parse1 Char String
-programParser = buildNothing (terminalParser "PROGRAM" `follows` programNameParser) `follows` buildNothing (terminalParser ".")
+programParser = buildNothing (terminalParser "PROGRAM" `follows` programNameParser) `follows` statementSeqParser `follows` buildNothing (terminalParser ".")
 
 programNameParser :: Parse1 Char String
 programNameParser = upperCharParser `follows` charDigSeq
@@ -129,17 +131,19 @@ digParser = spot isDigit `build` (\a -> [a])
 charDigSeq :: Parse1 Char String
 charDigSeq = list (alt charParser digParser `build` \[a] -> a)
 
---
-{- skipParser :: Parse1 Char String
+skipParser :: Parse1 Char String
 skipParser = terminalParser "SKIP"
+
+statementSeqParser :: Parse1 Char String
+statementSeqParser = statementParser `follows` (list (buildNothing (terminalParser ";") `follows` statementParser) `build` \sl -> concat sl)
 
 statementParser :: Parse1 Char String
 statementParser =
   skipParser
-    `alt` assignmentParser
-    `alt` ifParser
-    `alt` whileParser
-    `alt` (terminalParser "BEGIN" `follows` statementSeqParser `follows` terminalParser "END") -}
+    --   `alt` assignmentParser
+    --   `alt` ifParser
+    --   `alt` whileParser
+    `alt` (terminalParser "BEGIN" `follows` statementSeqParser `follows` terminalParser "END")
 
 -- topLevel1 parser1 "PROGRAM someName SKIP"
 
@@ -157,4 +161,8 @@ runTests = do
   assertEqual
     "programParser \"PROGRAMFlo.\""
     (programParser "PROGRAMFlo.")
-    [("", "")]
+    []
+  assertEqual
+    "programParser \"PROGRAMFloSKIP.\""
+    (programParser "PROGRAMFloSKIP.")
+    [("SKIP", "")]
