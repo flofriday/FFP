@@ -54,18 +54,22 @@ topLevel1 parser input =
 parser1 :: Parse1 Char (Maybe String)
 parser1 input = []
 
+-- A parser that allways fails
 none :: Parse1 a b
 none _ = []
 
+-- A parser that allways succeeds
 succeed :: b -> Parse1 a b
 succeed val inp = [(val, inp)]
 
+-- Consuming the single token if it matches the input and adding it to the output
 token :: (Eq a) => a -> Parse1 a a
 token t (x : xs)
   | t == x = [(t, xs)]
   | otherwise = []
 token t [] = []
 
+-- Consuming the single token if it fits the function and adding it to the output
 spot :: (a -> Bool) -> Parse1 a a
 spot p (x : xs)
   | p x = [(x, xs)]
@@ -74,9 +78,11 @@ spot p [] = []
 
 --
 
+-- Combining parser alterantives
 alt :: Parse1 a b -> Parse1 a b -> Parse1 a b
 alt p1 p2 input = p1 input ++ p2 input
 
+-- Combining parsers sequentually
 (>*>) :: Parse1 a b -> Parse1 a c -> Parse1 a (b, c)
 (>*>) p1 p2 input = [((y, z), rem2) | (y, rem1) <- p1 input, (z, rem2) <- p2 rem1]
 
@@ -85,14 +91,16 @@ build p f input = [(f x, rem) | (x, rem) <- p input]
 
 -- End of definitions
 -- Define a parser for terminals
-terminalParser :: (Eq a) => [a] -> Parse1 a [a]
+terminalParser :: [Char] -> Parse1 Char (Maybe String)
 terminalParser t (x : xs)
-  | t `isPrefixOf` (x : xs) = [(t, drop (length t) (x : xs))]
-  | otherwise = []
-terminalParser _ [] = []
+  | t `isPrefixOf` (x : xs) = [(Just t, drop (length t) (x : xs))]
+  | otherwise = [(Nothing, [])]
+terminalParser _ [] = [(Nothing, [])]
 
 programParser :: Parse1 Char (Maybe String)
-programParser = terminalParser "PROGRAM" `build` Just
+programParser = terminalParser "PROGRAM"
+
+-- programParser = terminalParser "PROGRAM" `build` Just
 
 programNameParser :: Parse1 Char (Maybe String)
 programNameParser _ = []
