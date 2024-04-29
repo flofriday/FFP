@@ -461,6 +461,7 @@ upperCharParser = spot isAsciiUpper `build` ((: []))
 -- Parsing a non empty sequence of statements, seperated by semicolon
 -- (but no trailing)
 -- Grammar: <statement_seq> ::= <statement>|<statement>;<statement_seq>
+-- Target:  S ::= S1; S2
 statementSeqParser :: Parse1 Char String
 statementSeqParser =
   whiteSpaceParser
@@ -497,6 +498,7 @@ skipParser = terminalParser "SKIP"
 
 -- Parses an assignment
 -- Grammar: <assignment> ::= <variable> = <expr>
+-- Target:  V := E
 assignmentParser :: Parse1 Char String
 assignmentParser =
   variableParser
@@ -507,6 +509,7 @@ assignmentParser =
 
 -- Parsing the if statement
 -- Grammar: <if> ::= IF <pred_expr> THEN <statement> ELSE <statement>
+-- Target:  if E then S1 else S2 fi
 ifParser :: Parse1 Char String
 ifParser =
   (terminalParser "IF" `build` const "if")
@@ -523,6 +526,7 @@ ifParser =
 
 -- Parsing the while statement
 -- Grammar: WHILE <pred_expr> DO <statement>
+-- Target:  while E do S od
 whileParser :: Parse1 Char String
 whileParser =
   (terminalParser "WHILE" `build` const "while")
@@ -535,6 +539,7 @@ whileParser =
 
 -- Parsing a single expression
 -- Grammar: <expr> ::= <variable> | <integer> | <float> | <operator><expr><expr>
+-- Target:  V | I | (E1 + E2) | (E1 − E2) | (E1 * E2) | (E1 / E2)
 exprParser :: Parse1 Char String
 exprParser =
   variableParser
@@ -560,6 +565,7 @@ operatorParser =
 
 -- Parsing a kind of comparison
 -- Grammar: <pred_expr> ::= <relator><expr><expr>
+-- Target:  (E1 = E2) | (E1 =/= E2) | (E1 >= E2) | (E1 <= E2)
 predExprParser :: Parse1 Char String
 predExprParser =
   ( relatorParser
