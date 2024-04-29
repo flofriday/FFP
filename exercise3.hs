@@ -634,77 +634,79 @@ assertEqual testName actual expected =
 
 runTests :: IO ()
 runTests = do
-  -- MARK: Task 2 tests --
   assertEqual
-    "programParser \"PROGRAMFlo.\""
-    (programParser "PROGRAMFlo.")
-    []
-  assertEqual
-    "programParser \"PROGRAMFloSKIP.\""
-    (programParser "PROGRAMFloSKIP.")
-    [("SKIP", "")]
-  assertEqual
-    "programParser \"PROGRAM Flo SKIP.\""
-    (programParser "PROGRAM Flo SKIP.")
-    [("SKIP", "")]
-  assertEqual
-    "programParser \"PROGRAM Flo SKIP;SKIP;SKIP.\""
-    (programParser "PROGRAM Flo SKIP;SKIP;SKIP.")
-    [("SKIP; SKIP; SKIP", "")]
-  -- MARK: Top Level tests --
-  assertEqual
-    "topLevel1 parser1 \"PROGRAMFlo.\""
+    "Invalid Empty program"
     (topLevel1 parser1 "PROGRAMFlo.")
     Nothing
   assertEqual
-    "topLevel1 parser1 \"PROGRAMFloSKIP.\""
+    "Invalid Empty program with whitespace"
+    (topLevel1 parser1 "PROGRAM Flo .")
+    Nothing
+  assertEqual
+    "Single skip program"
     (topLevel1 parser1 "PROGRAMFloSKIP.")
     (Just "SKIP")
   assertEqual
-    "topLevel1 parser1 \"PROGRAM Jojo SKIP.\""
+    "Single skip program with whitespace"
     (topLevel1 parser1 "PROGRAM Jojo SKIP.")
     (Just "SKIP")
   assertEqual
-    "topLevel1 parser1 \"PROGRAM Jojo SKIP;SKIP;SKIP.\""
+    "Invalid small program name"
+    (topLevel1 parser1 "PROGRAM flo SKIP.")
+    (Nothing)
+  assertEqual
+    "Triple skip"
     (topLevel1 parser1 "PROGRAM Jojo SKIP;SKIP;SKIP.")
     (Just "SKIP; SKIP; SKIP")
   assertEqual
-    "topLevel1 parser1 \"PROGRAM JoJo x4 = 123.5.\""
+    "Single assignment"
     (topLevel1 parser1 "PROGRAM Jojo x4 = 123.5.")
     (Just "x4:=123.5")
   assertEqual
-    "topLevel1 parser1 \"PROGRAM JoJo x4 = -1.-5.\""
+    "Invalid malformed float"
     (topLevel1 parser1 "PROGRAM Jojo x4 = -1.-5.")
     (Nothing)
   assertEqual
-    "topLevel1 parser1 \"PROGRAM Jojo IF <= 4 10 THEN SKIP ELSE y = 14.\""
+    "Single if statement"
     (topLevel1 parser1 "PROGRAM Jojo IF <= 4 10 THEN SKIP ELSE y = 14.")
     (Just "if 4<=10 then SKIP else y:=14 fi")
   assertEqual
-    "topLevel1 parser1 \"PROGRAM Jojo WHILE == x y DO x = + x 1.\""
+    "Single while statement with equal"
     (topLevel1 parser1 "PROGRAM Jojo WHILE == x y DO x = + x 1.")
     (Just "while x=y do x:=x+1 od")
   assertEqual
-    "topLevel1 parser1 \"PROGRAM Jojo WHILE /= x y DO x = + x 1.\""
+    "Single while statement with unequal"
     (topLevel1 parser1 "PROGRAM Jojo WHILE /= x y DO x = + x 1.")
     (Just "while x=/=y do x:=x+1 od")
   assertEqual
-    "topLevel1 parser1 \"PROGRAM Jojo x1=+ 1 2;x2= - 3 4;x3= * 5 6;x4= / 10.5 3.2.\""
+    "Single while statement with greater equal"
+    (topLevel1 parser1 "PROGRAM Jojo WHILE >= x y DO x = + x 1.")
+    (Just "while x>=y do x:=x+1 od")
+  assertEqual
+    "Single while statement with less equal"
+    (topLevel1 parser1 "PROGRAM Jojo WHILE <= x y DO x = + x 1.")
+    (Just "while x<=y do x:=x+1 od")
+  assertEqual
+    "Multiple assignments"
     (topLevel1 parser1 "PROGRAM Jojo x1=+ 1 2;x2= - 3 4;x3= * 5 6;x4= / 10.5 3.2.")
     (Just "x1:=1+2; x2:=3-4; x3:=5*6; x4:=10.5/3.2")
   assertEqual
-    "topLevel1 parser1 \"PROGRAM Jojo WHILE /= x y DO BEGIN x = 44; y=22; z = + 1 2 END.\""
+    "While with multiple statements in body"
     (topLevel1 parser1 "PROGRAM Jojo WHILE /= x y DO BEGIN x = 44; y=22; z = + 1 2 END.")
     (Just "while x=/=y do x:=44; y:=22; z:=1+2 od")
   assertEqual
-    "topLevel1 parser1 \"PROGRAM Jojo x=000000001;x1=-000000001;x2=-000000001000000;x3=-453500454.\""
+    "Multiple high negative integers"
     (topLevel1 parser1 "PROGRAM Jojo x=000000001;x1=-000000001;x2=-000000001000000;x3=-453500454.")
     (Just "x:=1; x1:=-1; x2:=-1000000; x3:=-453500454")
   assertEqual
-    "topLevel1 parser1 \"PROGRAM Jojo x=-0;x1=0.\""
+    "Negative zero integers"
     (topLevel1 parser1 "PROGRAM Jojo x=-0;x1=0.")
     (Just "x:=0; x1:=0")
   assertEqual
-    "topLevel1 parser1 \"PROGRAM Jojo x=000000001;x1=-000000001;x2=-000000001000000;x3=-453500454.\""
+    "High precission floats"
     (topLevel1 parser1 "PROGRAM Jojo x=0001.000001;x1=-00020000.0000034404340000434000.")
     (Just "x:=1.000001; x1:=-20000.0000034404340000434000")
+  assertEqual
+    "Fibonacci"
+    (topLevel1 parser1 "PROGRAM Fib n=10; a=0; b=1; i=0; WHILE <= i - n 1 DO BEGIN tmp= + a b; a=b; b=tmp END; return=b.")
+    (Just "n:=10; a:=0; b:=1; i:=0; while i<=n-1 do tmp:=a+b; a:=b; b:=tmp od; return:=b")
