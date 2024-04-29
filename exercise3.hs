@@ -510,12 +510,17 @@ floatParser = integerParser `follows` terminalParser "." `follows` integerParser
 
 ifParser :: Parse1 Char String
 ifParser =
-  terminalParser "IF"
+  (terminalParser "IF" `build` const "if")
+    `follows` (whiteSpaceParser `build` const " ")
     `follows` predExprParser
-    `follows` terminalParser "THEN"
+    `follows` (whiteSpaceParser `build` const " ")
+    `follows` (terminalParser "THEN" `build` const "then")
+    `follows` (whiteSpaceParser `build` const " ")
     `follows` statementParser
-    `follows` terminalParser "ELSE"
-    `follows` statementParser
+    `follows` (whiteSpaceParser `build` const " ")
+    `follows` (terminalParser "ELSE" `build` const "else")
+    `follows` (whiteSpaceParser `build` const " ")
+    `follows` (statementParser `build` (++ " fi"))
 
 whileParser :: Parse1 Char String
 whileParser =
@@ -532,7 +537,12 @@ operatorParser =
     `alt` terminalParser "/"
 
 predExprParser :: Parse1 Char String
-predExprParser = relatorParser `follows` exprParser `follows` exprParser
+predExprParser =
+  relatorParser
+    `follows` whiteSpaceParser
+    `follows` exprParser
+    `follows` whiteSpaceParser
+    `follows` exprParser
 
 relatorParser :: Parse1 Char String
 relatorParser =
@@ -595,3 +605,7 @@ runTests = do
     "topLevel1 parser1 \"PROGRAM JoJo x4 = 123.5.\""
     (topLevel1 parser1 "PROGRAM Jojo x4 = 123.5.")
     (Just "x4:=123.5")
+  assertEqual
+    "topLevel1 parser1 \"PROGRAM Jojo IF <= 4 10 THEN SKIP ELSE y = 14.\""
+    (topLevel1 parser1 "PROGRAM Jojo IF <= 4 10 THEN SKIP ELSE y = 14.")
+    (Just "if 4<=10 then SKIP else y:=14 fi")
