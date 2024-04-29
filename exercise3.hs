@@ -497,7 +497,14 @@ exprParser =
   variableParser
     `alt` integerParser
     `alt` floatParser
-    `alt` (operatorParser `follows` exprParser `follows` exprParser)
+    `alt` ( ( operatorParser
+                >*> whiteSpaceParser
+                >*> exprParser
+                >*> whiteSpaceParser
+                >*> exprParser
+            )
+              `build` (\((((operator, _), expr1), _), expr2) -> expr1 ++ operator ++ expr2)
+          )
 
 integerParser :: Parse1 Char String
 integerParser =
@@ -524,10 +531,13 @@ ifParser =
 
 whileParser :: Parse1 Char String
 whileParser =
-  terminalParser "WHILE"
+  (terminalParser "WHILE" `build` const "while")
+    `follows` (whiteSpaceParser `build` const " ")
     `follows` predExprParser
-    `follows` terminalParser "DO"
-    `follows` statementParser
+    `follows` (whiteSpaceParser `build` const " ")
+    `follows` (terminalParser "DO" `build` const "do")
+    `follows` (whiteSpaceParser `build` const " ")
+    `follows` (statementParser `build` (++ " od"))
 
 operatorParser :: Parse1 Char String
 operatorParser =
@@ -548,8 +558,8 @@ predExprParser =
 
 relatorParser :: Parse1 Char String
 relatorParser =
-  terminalParser "=="
-    `alt` terminalParser "/="
+  (terminalParser "==" `build` const "=")
+    `alt` (terminalParser "/=" `build` const "=/=")
     `alt` terminalParser ">="
     `alt` terminalParser "<="
 
@@ -614,4 +624,8 @@ runTests = do
   assertEqual
     "topLevel1 parser1 \"PROGRAM Jojo WHILE == x y DO x = + x 1.\""
     (topLevel1 parser1 "PROGRAM Jojo WHILE == x y DO x = + x 1.")
-    (Just "if 4<=10 then SKIP else y:=14 fi")
+    (Just "while x=y do x:=x+1 od")
+  assertEqual
+    "topLevel1 parser1 \"PROGRAM Jojo WHILE /= x y DO x = + x 1.\""
+    (topLevel1 parser1 "PROGRAM Jojo WHILE /= x y DO x = + x 1.")
+    (Just "while x=/=y do x:=x+1 od")
