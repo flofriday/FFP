@@ -479,7 +479,12 @@ statementParser =
     `alt` assignmentParser
     `alt` ifParser
     `alt` whileParser
-    `alt` (terminalParser "BEGIN" `follows` statementSeqParser `follows` terminalParser "END")
+    `alt` ( buildNothing (terminalParser "BEGIN")
+              `follows` whiteSpaceParser
+              `follows` statementSeqParser
+              `follows` whiteSpaceParser
+              `follows` buildNothing (terminalParser "END")
+          )
 
 assignmentParser :: Parse1 Char String
 assignmentParser =
@@ -629,3 +634,11 @@ runTests = do
     "topLevel1 parser1 \"PROGRAM Jojo WHILE /= x y DO x = + x 1.\""
     (topLevel1 parser1 "PROGRAM Jojo WHILE /= x y DO x = + x 1.")
     (Just "while x=/=y do x:=x+1 od")
+  assertEqual
+    "topLevel1 parser1 \"PROGRAM Jojo x1=+ 1 2;x2= - 3 4;x3= * 5 6;x4= / 10.5 3.2.\""
+    (topLevel1 parser1 "PROGRAM Jojo x1=+ 1 2;x2= - 3 4;x3= * 5 6;x4= / 10.5 3.2.")
+    (Just "x1:=1+2; x2:=3-4; x3:=5*6; x4:=10.5/3.2")
+  assertEqual
+    "topLevel1 parser1 \"PROGRAM Jojo WHILE /= x y DO BEGIN x = 44; y=22; z = + 1 2 END.\""
+    (topLevel1 parser1 "PROGRAM Jojo WHILE /= x y DO BEGIN x = 44; y=22; z = + 1 2 END.")
+    (Just "while x=/=y do x:=44; y:=22; z:=1+2 od")
