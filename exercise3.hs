@@ -538,11 +538,13 @@ operatorParser =
 
 predExprParser :: Parse1 Char String
 predExprParser =
-  relatorParser
-    `follows` whiteSpaceParser
-    `follows` exprParser
-    `follows` whiteSpaceParser
-    `follows` exprParser
+  ( relatorParser
+      >*> whiteSpaceParser
+      >*> exprParser
+      >*> whiteSpaceParser
+      >*> exprParser
+  )
+    `build` (\((((relator, _), expr1), _), expr2) -> expr1 ++ relator ++ expr2)
 
 relatorParser :: Parse1 Char String
 relatorParser =
@@ -608,4 +610,8 @@ runTests = do
   assertEqual
     "topLevel1 parser1 \"PROGRAM Jojo IF <= 4 10 THEN SKIP ELSE y = 14.\""
     (topLevel1 parser1 "PROGRAM Jojo IF <= 4 10 THEN SKIP ELSE y = 14.")
+    (Just "if 4<=10 then SKIP else y:=14 fi")
+  assertEqual
+    "topLevel1 parser1 \"PROGRAM Jojo WHILE == x y DO x = + x 1.\""
+    (topLevel1 parser1 "PROGRAM Jojo WHILE == x y DO x = + x 1.")
     (Just "if 4<=10 then SKIP else y:=14 fi")
