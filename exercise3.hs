@@ -435,41 +435,32 @@ integerZeroesStripper input
 whiteSpaceParser :: Parse1 Char String
 whiteSpaceParser = list (singleWhiteSpaceParser `build` const ' ') `build` const ""
 
--- MARK: Parser --
--- Define a parser for terminals
 terminalParser :: String -> Parse1 Char String
 terminalParser target input
   | target `isPrefixOf` input = [(target, drop (length target) input)]
   | otherwise = none input
 
+-- MARK: Parser --
+-- Define a parser for terminals
+-- Grammar: <program> ::= PROGRAM <program_name> <statement_seq> .
 programParser :: Parse1 Char String
 programParser =
   buildNothing (terminalParser "PROGRAM" `follows` whiteSpaceParser `follows` programNameParser)
     `follows` statementSeqParser
     `follows` buildNothing (terminalParser ".")
 
+-- Grammar: <program_name> ::= <upper_char><chardig_seq>
 programNameParser :: Parse1 Char String
 programNameParser = upperCharParser `follows` charDigSeqParser
 
--- Parsers a single (lower case) character
-charParser :: Parse1 Char String
-charParser = spot isAsciiLower `build` ((: []))
-
+-- Parse a single (upper case) character
+-- Grammar: <upper_char> ::= A|B|C|...|Z
 upperCharParser :: Parse1 Char String
 upperCharParser = spot isAsciiUpper `build` ((: []))
 
-digParser :: Parse1 Char String
-digParser = spot isDigit `build` ((: []))
-
-digSeqParser :: Parse1 Char String
-digSeqParser = list (digParser `build` \[a] -> a)
-
-charDigSeqParser :: Parse1 Char String
-charDigSeqParser = list (alt charParser digParser `build` \[a] -> a)
-
-skipParser :: Parse1 Char String
-skipParser = terminalParser "SKIP"
-
+-- Parsing a non empty sequence of statements, seperated by semicolon
+-- (but no trailing)
+-- Grammar: <statement_seq> ::= <statement>|<statement>;<statement_seq>
 statementSeqParser :: Parse1 Char String
 statementSeqParser =
   whiteSpaceParser
@@ -484,6 +475,8 @@ statementSeqParser =
                   `build` \sl -> concat sl
               )
 
+-- Parses a single statement
+-- Grammar: <skip> | <assignment> | <if> | <while> | BEGIN < statement seq > END
 statementParser :: Parse1 Char String
 statementParser =
   skipParser
@@ -491,12 +484,19 @@ statementParser =
     `alt` ifParser
     `alt` whileParser
     `alt` ( buildNothing (terminalParser "BEGIN")
-              `follows` whiteSpaceParser
+              `follows` whiteSpaceParser -- FIXME: I think the whitespace thing can be ignored
               `follows` statementSeqParser
               `follows` whiteSpaceParser
               `follows` buildNothing (terminalParser "END")
           )
 
+-- Parse the skip keyword
+-- Grammar: <skip> ::= SKIP
+skipParser :: Parse1 Char String
+skipParser = terminalParser "SKIP"
+
+-- Parses an assignment
+-- Grammar: <assignment> ::= <variable> = <expr>
 assignmentParser :: Parse1 Char String
 assignmentParser =
   variableParser
@@ -505,35 +505,8 @@ assignmentParser =
     `follows` whiteSpaceParser
     `follows` exprParser
 
-variableParser :: Parse1 Char String
-variableParser = charParser `follows` charDigSeqParser
-
-exprParser :: Parse1 Char String
-exprParser =
-  variableParser
-    `alt` (integerParser `build` integerZeroesStripper)
-    `alt` floatParser
-    `alt` ( ( operatorParser
-                >*> whiteSpaceParser
-                >*> exprParser
-                >*> whiteSpaceParser
-                >*> exprParser
-            )
-              `build` (\((((operator, _), expr1), _), expr2) -> expr1 ++ operator ++ expr2)
-          )
-
-integerParser :: Parse1 Char String
-integerParser =
-  (digParser `follows` digSeqParser)
-    `alt` (terminalParser "-" `follows` digParser `follows` digSeqParser)
-
--- FIXME: How are floats designed
-floatParser :: Parse1 Char String
-floatParser =
-  (integerParser `build` integerZeroesStripper)
-    `follows` terminalParser "."
-    `follows` integerParser
-
+-- Parsing the if statement
+-- Grammar: <if> ::= IF <pred_expr> THEN <statement> ELSE <statement>
 ifParser :: Parse1 Char String
 ifParser =
   (terminalParser "IF" `build` const "if")
@@ -548,6 +521,8 @@ ifParser =
     `follows` (whiteSpaceParser `build` const " ")
     `follows` (statementParser `build` (++ " fi"))
 
+-- Parsing the while statement
+-- Grammar: WHILE <pred_expr> DO <statement>
 whileParser :: Parse1 Char String
 whileParser =
   (terminalParser "WHILE" `build` const "while")
@@ -558,6 +533,24 @@ whileParser =
     `follows` (whiteSpaceParser `build` const " ")
     `follows` (statementParser `build` (++ " od"))
 
+-- Parsing a single expression
+-- Grammar: <expr> ::= <variable> | <integer> | <float> | <operator><expr><expr>
+exprParser :: Parse1 Char String
+exprParser =
+  variableParser
+    `alt` (integerParser `build` integerZeroesStripper)
+    `alt` floatParser
+    `alt` ( ( operatorParser
+                >*> whiteSpaceParser
+                >*> exprParser
+                >*> whiteSpaceParser
+                >*> exprParser
+            )
+              `build` (\((((operator, _), expr1), _), expr2) -> expr1 ++ operator ++ expr2)
+          )
+
+-- Parsing just an operator
+-- Grammar: <operator> ::= + | - | * | /
 operatorParser :: Parse1 Char String
 operatorParser =
   terminalParser "+"
@@ -565,6 +558,8 @@ operatorParser =
     `alt` terminalParser "*"
     `alt` terminalParser "/"
 
+-- Parsing a kind of comparison
+-- Grammar: <pred_expr> ::= <relator><expr><expr>
 predExprParser :: Parse1 Char String
 predExprParser =
   ( relatorParser
@@ -575,6 +570,8 @@ predExprParser =
   )
     `build` (\((((relator, _), expr1), _), expr2) -> expr1 ++ relator ++ expr2)
 
+-- Parsing a comparison operator (aka relator)
+-- Grammar: ::= ==|/=|>=|<=
 relatorParser :: Parse1 Char String
 relatorParser =
   (terminalParser "==" `build` const "=")
@@ -582,7 +579,41 @@ relatorParser =
     `alt` terminalParser ">="
     `alt` terminalParser "<="
 
--- topLevel1 parser1 "PROGRAM someName SKIP"
+-- Parses a variable name
+-- Grammar: <variable> :== <char><chardig_seq>
+variableParser :: Parse1 Char String
+variableParser = charParser `follows` charDigSeqParser
+
+-- Parsers a single (lower case) character
+charParser :: Parse1 Char String
+charParser = spot isAsciiLower `build` ((: []))
+
+-- Parse a possible empty sequence of characters and digits
+charDigSeqParser :: Parse1 Char String
+charDigSeqParser = list (alt charParser digParser `build` \[a] -> a)
+
+-- Parse a single digit
+digParser :: Parse1 Char String
+digParser = spot isDigit `build` ((: []))
+
+-- Parse a possibly empty sequece of digits
+digSeqParser :: Parse1 Char String
+digSeqParser = list (digParser `build` \[a] -> a)
+
+-- Parsing a positve or negative integer
+-- Grammar: <integer> ::= <digit><digit seq> | - <digit><digit seq>
+integerParser :: Parse1 Char String
+integerParser =
+  (digParser `follows` digSeqParser)
+    `alt` (terminalParser "-" `follows` digParser `follows` digSeqParser)
+
+-- FIXME: Wait for response from LVA about how this is defined
+-- Grammar: <float> ::= <digit><digit_seq> . <digit><digit_seq>
+floatParser :: Parse1 Char String
+floatParser =
+  (integerParser `build` integerZeroesStripper)
+    `follows` terminalParser "."
+    `follows` integerParser
 
 -- Runs all tests
 -- MARK: Tests --
