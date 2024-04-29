@@ -420,6 +420,17 @@ singleWhiteSpaceParser input
   | " " `isPrefixOf` input || "\n" `isPrefixOf` input = [([], drop 1 input)]
   | otherwise = none input
 
+getSign :: String -> (String, String)
+getSign ('-' : xs) = ("-", xs)
+getSign string = ([], string)
+
+integerZeroesStripper :: String -> String
+integerZeroesStripper input
+  | all (\c -> c < '1' || c > '9') input && elem '0' input = "0"
+  | otherwise = sign ++ dropWhile (== '0') number
+  where
+    (sign, number) = getSign input
+
 -- second build swallows all whitespaces
 whiteSpaceParser :: Parse1 Char String
 whiteSpaceParser = list (singleWhiteSpaceParser `build` const ' ') `build` const ""
@@ -500,7 +511,7 @@ variableParser = charParser `follows` charDigSeqParser
 exprParser :: Parse1 Char String
 exprParser =
   variableParser
-    `alt` integerParser
+    `alt` (integerParser `build` integerZeroesStripper)
     `alt` floatParser
     `alt` ( ( operatorParser
                 >*> whiteSpaceParser
@@ -518,7 +529,10 @@ integerParser =
 
 -- FIXME: How are floats designed
 floatParser :: Parse1 Char String
-floatParser = integerParser `follows` terminalParser "." `follows` integerParser
+floatParser =
+  (integerParser `build` integerZeroesStripper)
+    `follows` terminalParser "."
+    `follows` integerParser
 
 ifParser :: Parse1 Char String
 ifParser =
@@ -642,3 +656,15 @@ runTests = do
     "topLevel1 parser1 \"PROGRAM Jojo WHILE /= x y DO BEGIN x = 44; y=22; z = + 1 2 END.\""
     (topLevel1 parser1 "PROGRAM Jojo WHILE /= x y DO BEGIN x = 44; y=22; z = + 1 2 END.")
     (Just "while x=/=y do x:=44; y:=22; z:=1+2 od")
+  assertEqual
+    "topLevel1 parser1 \"PROGRAM Jojo x=000000001;x1=-000000001;x2=-000000001000000;x3=-453500454.\""
+    (topLevel1 parser1 "PROGRAM Jojo x=000000001;x1=-000000001;x2=-000000001000000;x3=-453500454.")
+    (Just "x:=1; x1:=-1; x2:=-1000000; x3:=-453500454")
+  assertEqual
+    "topLevel1 parser1 \"PROGRAM Jojo x=-0;x1=0.\""
+    (topLevel1 parser1 "PROGRAM Jojo x=-0;x1=0.")
+    (Just "x:=0; x1:=0")
+  assertEqual
+    "topLevel1 parser1 \"PROGRAM Jojo x=000000001;x1=-000000001;x2=-000000001000000;x3=-453500454.\""
+    (topLevel1 parser1 "PROGRAM Jojo x=0001.000001;x1=-00020000.0000034404340000434000.")
+    (Just "x:=1.000001; x1:=-20000.0000034404340000434000")
