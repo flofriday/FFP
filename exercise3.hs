@@ -4,15 +4,16 @@ import Data.Array.Base (IArray (numElements))
 import Data.Char
 import Data.List
 import Data.Maybe
+import Data.String (String)
 import GHC.Integer.GMP.Internals (sqrInteger)
 import GHC.Real (reduce)
 import GHC.Utils.Binary (Bin)
 import Test.QuickCheck
 import Text.Printf
 
--- MARK: Part 1
+-- MARK: Part 1 --
 
--- MARK: Task 1.1
+-- MARK: Task 1.1 --
 type Nat0 = Integer
 
 type Nat1 = Integer
@@ -35,7 +36,7 @@ prop_equationalEquality = forAll (chooseInteger (2, 20)) $ \n -> trivial (n < 3)
 
 -- Run with: quickCheck prop_equationalEquality
 
--- MARK: Task 1.2
+-- MARK: Task 1.2 --
 fib :: Nat0 -> Nat0
 fib 0 = 0
 fib 1 = 1
@@ -67,7 +68,7 @@ prop_quotientSmallerThanEpsilon = forAll (chooseInteger (2, 30)) $
 
 -- Run with: quickCheck prop_quotientSmallerThanEpsilon
 
--- MARK: Task 1.3
+-- MARK: Task 1.3 --
 
 -- Definitions from exercise 2
 type Index = (Nat1, Nat1)
@@ -307,7 +308,7 @@ listToArray xss = array ((1, 1), (toInteger rowCount, toInteger colCount)) indic
     colCount = if rowCount > 0 then length (head xss) else 0
     indices = [((toInteger (i + 1), toInteger (j + 1)), xss !! i !! j) | i <- [0 .. rowCount - 1], j <- [0 .. colCount - 1]]
 
--- MARK: 1.3 Implementation
+-- MARK: 1.3 Implementation --
 
 -- Given an input size this function creates a board to solve.
 -- The input must be a postive even number.
@@ -341,9 +342,9 @@ prop_binoxxoSmartSolve = forAll genSolveableBoard $ \b -> collect (formatCollect
     boardSize b = (round (sqrt (fromIntegral (numElements b))))
     formatCollect b = (show (boardSize b)) ++ "x" ++ (show (boardSize b))
 
--- Run with:rquickCheck prop_binoxxoSmartSolve
+-- Run with: quickCheck prop_binoxxoSmartSolve
 
--- MARK: Task2
+-- MARK: Task2 --
 type Parse1 a b = [a] -> [(b, [a])]
 
 topLevel1 :: Parse1 a b -> [a] -> b
@@ -355,7 +356,7 @@ topLevel1 parser input =
     results = [found | (found, []) <- parser input]
 
 parser1 :: Parse1 Char (Maybe String)
-parser1 input = []
+parser1 = Just programParser
 
 -- A parser that allways fails
 none :: Parse1 a b
@@ -400,14 +401,23 @@ build p f input = [(f x, rem) | (x, rem) <- p input]
 
 -- End of definitions
 
--- MARK: Custom definitions
+-- MARK: Custom definitions --
 follows :: Parse1 Char String -> Parse1 Char String -> Parse1 Char String
 follows p1 p2 = (p1 >*> p2) `build` uncurry (++)
 
 buildNothing :: Parse1 Char String -> Parse1 Char String
 buildNothing p input = [("", rem) | (x, rem) <- p input]
 
--- MARK: Parser
+singleWhiteSpaceParser :: Parse1 Char String
+singleWhiteSpaceParser input
+  | " " `isPrefixOf` input || "\n" `isPrefixOf` input = [([], drop 1 input)]
+  | otherwise = none input
+
+-- second build swallows all whitespaces
+whiteSpaceParser :: Parse1 Char String
+whiteSpaceParser = list (singleWhiteSpaceParser `build` const ' ') `build` const ""
+
+-- MARK: Parser --
 -- Define a parser for terminals
 terminalParser :: String -> Parse1 Char String
 terminalParser target input
@@ -415,11 +425,15 @@ terminalParser target input
   | otherwise = none input
 
 programParser :: Parse1 Char String
-programParser = buildNothing (terminalParser "PROGRAM" `follows` programNameParser) `follows` statementSeqParser `follows` buildNothing (terminalParser ".")
+programParser =
+  buildNothing (terminalParser "PROGRAM" `follows` whiteSpaceParser `follows` programNameParser)
+    `follows` statementSeqParser
+    `follows` buildNothing (terminalParser ".")
 
 programNameParser :: Parse1 Char String
-programNameParser = upperCharParser `follows` charDigSeq
+programNameParser = upperCharParser `follows` charDigSeqParser
 
+-- Parsers a single (lower case) character
 charParser :: Parse1 Char String
 charParser = spot isAsciiLower `build` ((: []))
 
@@ -429,27 +443,97 @@ upperCharParser = spot isAsciiUpper `build` ((: []))
 digParser :: Parse1 Char String
 digParser = spot isDigit `build` ((: []))
 
-charDigSeq :: Parse1 Char String
-charDigSeq = list (alt charParser digParser `build` \[a] -> a)
+digSeqParser :: Parse1 Char String
+digSeqParser = list (digParser `build` \[a] -> a)
+
+charDigSeqParser :: Parse1 Char String
+charDigSeqParser = list (alt charParser digParser `build` \[a] -> a)
 
 skipParser :: Parse1 Char String
 skipParser = terminalParser "SKIP"
 
 statementSeqParser :: Parse1 Char String
-statementSeqParser = statementParser `follows` (list (buildNothing (terminalParser ";") `follows` statementParser) `build` \sl -> concat sl)
+statementSeqParser =
+  whiteSpaceParser
+    `follows` statementParser
+    `follows` whiteSpaceParser
+    `follows` ( list
+                  ( buildNothing
+                      whiteSpaceParser
+                      `follows` (terminalParser ";")
+                      `follows` whiteSpaceParser
+                      `follows` statementParser
+                  )
+                  `build` \sl -> concat sl
+              )
 
 statementParser :: Parse1 Char String
 statementParser =
   skipParser
-    --   `alt` assignmentParser
-    --   `alt` ifParser
-    --   `alt` whileParser
+    `alt` assignmentParser
+    `alt` ifParser
+    `alt` whileParser
     `alt` (terminalParser "BEGIN" `follows` statementSeqParser `follows` terminalParser "END")
+
+assignmentParser :: Parse1 Char String
+assignmentParser = variableParser `follows` terminalParser "=" `follows` exprParser
+
+variableParser :: Parse1 Char String
+variableParser = charParser `follows` charDigSeqParser
+
+exprParser :: Parse1 Char String
+exprParser =
+  variableParser
+    `alt` integerParser
+    `alt` floatParser
+    `alt` (operatorParser `follows` exprParser `follows` exprParser)
+
+integerParser :: Parse1 Char String
+integerParser =
+  (digParser `follows` digSeqParser)
+    `alt` (terminalParser "-" `follows` digParser `follows` digSeqParser)
+
+-- FIXME: How are floats designed
+floatParser :: Parse1 Char String
+floatParser = integerParser `follows` terminalParser "." `follows` integerParser
+
+ifParser :: Parse1 Char String
+ifParser =
+  terminalParser "IF"
+    `follows` predExprParser
+    `follows` terminalParser "THEN"
+    `follows` statementParser
+    `follows` terminalParser "ELSE"
+    `follows` statementParser
+
+whileParser :: Parse1 Char String
+whileParser =
+  terminalParser "WHILE"
+    `follows` predExprParser
+    `follows` terminalParser "DO"
+    `follows` statementParser
+
+operatorParser :: Parse1 Char String
+operatorParser =
+  terminalParser "+"
+    `alt` terminalParser "-"
+    `alt` terminalParser "*"
+    `alt` terminalParser "/"
+
+predExprParser :: Parse1 Char String
+predExprParser = relatorParser `follows` exprParser `follows` exprParser
+
+relatorParser :: Parse1 Char String
+relatorParser =
+  terminalParser "=="
+    `alt` terminalParser "/="
+    `alt` terminalParser ">="
+    `alt` terminalParser "<="
 
 -- topLevel1 parser1 "PROGRAM someName SKIP"
 
 -- Runs all tests
--- MARK : Tests
+-- MARK: Tests --
 assertEqual :: (Eq a, Show a) => String -> a -> a -> IO ()
 assertEqual testName actual expected =
   if actual == expected
@@ -467,3 +551,15 @@ runTests = do
     "programParser \"PROGRAMFloSKIP.\""
     (programParser "PROGRAMFloSKIP.")
     [("SKIP", "")]
+  assertEqual
+    "programParser \"PROGRAM Flo SKIP.\""
+    (programParser "PROGRAM Flo SKIP.")
+    [("SKIP", "")]
+  assertEqual
+    "programParser \"PROGRAM Flo SKIP;SKIP;SKIP.\""
+    (programParser "PROGRAM Flo SKIP;SKIP;SKIP.")
+    [("SKIP;SKIP;SKIP", "")]
+  assertEqual
+    "programParser \"PROGRAM      Flo     SKIP ;   SKIP ;    SKIP.\""
+    (programParser "PROGRAM      Flo     SKIP ;   SKIP ;    SKIP.")
+    [("SKIP;SKIP;SKIP", ""), ("SKIP;SKIP;SKIP", "")]
