@@ -538,7 +538,7 @@ whileParser =
 exprParser :: Parse1 Char String
 exprParser =
   variableParser
-    `alt` (integerParser `build` integerZeroesStripper)
+    `alt` integerParser
     `alt` floatParser
     `alt` ( ( operatorParser
                 >*> whiteSpaceParser
@@ -604,16 +604,19 @@ digSeqParser = list (digParser `build` \[a] -> a)
 -- Grammar: <integer> ::= <digit><digit seq> | - <digit><digit seq>
 integerParser :: Parse1 Char String
 integerParser =
-  (digParser `follows` digSeqParser)
-    `alt` (terminalParser "-" `follows` digParser `follows` digSeqParser)
+  ( (digParser `follows` digSeqParser)
+      `alt` (terminalParser "-" `follows` digParser `follows` digSeqParser)
+  )
+    `build` integerZeroesStripper
 
 -- FIXME: Wait for response from LVA about how this is defined
--- Grammar: <float> ::= <digit><digit_seq> . <digit><digit_seq>
+-- Grammar: <float> ::= <integer> . <digit><digit_seq>
 floatParser :: Parse1 Char String
 floatParser =
-  (integerParser `build` integerZeroesStripper)
+  integerParser
     `follows` terminalParser "."
-    `follows` integerParser
+    `follows` digParser
+    `follows` digSeqParser
 
 -- Runs all tests
 -- MARK: Tests --
@@ -660,13 +663,13 @@ runTests = do
     (topLevel1 parser1 "PROGRAM Jojo SKIP;SKIP;SKIP.")
     (Just "SKIP; SKIP; SKIP")
   assertEqual
-    "topLevel1 parser1 \"PROGRAM Jojo SKIP;SKIP;SKIP.\""
-    (topLevel1 parser1 "PROGRAM Jojo SKIP;SKIP;SKIP.")
-    (Just "SKIP; SKIP; SKIP")
-  assertEqual
     "topLevel1 parser1 \"PROGRAM JoJo x4 = 123.5.\""
     (topLevel1 parser1 "PROGRAM Jojo x4 = 123.5.")
     (Just "x4:=123.5")
+  assertEqual
+    "topLevel1 parser1 \"PROGRAM JoJo x4 = -1.-5.\""
+    (topLevel1 parser1 "PROGRAM Jojo x4 = -1.-5.")
+    (Nothing)
   assertEqual
     "topLevel1 parser1 \"PROGRAM Jojo IF <= 4 10 THEN SKIP ELSE y = 14.\""
     (topLevel1 parser1 "PROGRAM Jojo IF <= 4 10 THEN SKIP ELSE y = 14.")
