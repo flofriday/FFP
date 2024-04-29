@@ -4,6 +4,7 @@ import Data.Array.Base (IArray (numElements))
 import Data.Char
 import Data.List
 import Data.Maybe
+import Data.Maybe (Maybe (Nothing))
 import Data.String (String)
 import GHC.Integer.GMP.Internals (sqrInteger)
 import GHC.Real (reduce)
@@ -347,16 +348,22 @@ prop_binoxxoSmartSolve = forAll genSolveableBoard $ \b -> collect (formatCollect
 -- MARK: Task2 --
 type Parse1 a b = [a] -> [(b, [a])]
 
-topLevel1 :: Parse1 a b -> [a] -> b
+-- FIXME: this does no match the assignment description
+topLevel1 :: Parse1 Char (Maybe String) -> [Char] -> Maybe String
 topLevel1 parser input =
   case results of
-    [] -> error "parse unsuccessful"
+    [] -> Nothing
     _ -> head results
   where
     results = [found | (found, []) <- parser input]
 
+stringMaybeMapper :: (String, [Char]) -> (Maybe String, [Char])
+stringMaybeMapper (s, c)
+  | s == "" = (Nothing, c)
+  | otherwise = (Just s, c)
+
 parser1 :: Parse1 Char (Maybe String)
-parser1 = Just programParser
+parser1 input = map stringMaybeMapper (programParser input)
 
 -- A parser that allways fails
 none :: Parse1 a b
@@ -458,9 +465,8 @@ statementSeqParser =
     `follows` statementParser
     `follows` whiteSpaceParser
     `follows` ( list
-                  ( buildNothing
-                      whiteSpaceParser
-                      `follows` (terminalParser ";")
+                  ( whiteSpaceParser
+                      `follows` ((terminalParser ";") `build` \semicolon -> semicolon ++ " ")
                       `follows` whiteSpaceParser
                       `follows` statementParser
                   )
@@ -476,7 +482,12 @@ statementParser =
     `alt` (terminalParser "BEGIN" `follows` statementSeqParser `follows` terminalParser "END")
 
 assignmentParser :: Parse1 Char String
-assignmentParser = variableParser `follows` terminalParser "=" `follows` exprParser
+assignmentParser =
+  variableParser
+    `follows` whiteSpaceParser
+    `follows` (terminalParser "=" `build` \equalSign -> ":" ++ equalSign)
+    `follows` whiteSpaceParser
+    `follows` exprParser
 
 variableParser :: Parse1 Char String
 variableParser = charParser `follows` charDigSeqParser
@@ -558,8 +569,29 @@ runTests = do
   assertEqual
     "programParser \"PROGRAM Flo SKIP;SKIP;SKIP.\""
     (programParser "PROGRAM Flo SKIP;SKIP;SKIP.")
-    [("SKIP;SKIP;SKIP", "")]
+    [("SKIP; SKIP; SKIP", "")]
+  -- MARK: Top Level tests --
   assertEqual
-    "programParser \"PROGRAM      Flo     SKIP ;   SKIP ;    SKIP.\""
-    (programParser "PROGRAM      Flo     SKIP ;   SKIP ;    SKIP.")
-    [("SKIP;SKIP;SKIP", ""), ("SKIP;SKIP;SKIP", "")]
+    "topLevel1 parser1 \"PROGRAMFlo.\""
+    (topLevel1 parser1 "PROGRAMFlo.")
+    Nothing
+  assertEqual
+    "topLevel1 parser1 \"PROGRAMFloSKIP.\""
+    (topLevel1 parser1 "PROGRAMFloSKIP.")
+    (Just "SKIP")
+  assertEqual
+    "topLevel1 parser1 \"PROGRAM Jojo SKIP.\""
+    (topLevel1 parser1 "PROGRAM Jojo SKIP.")
+    (Just "SKIP")
+  assertEqual
+    "topLevel1 parser1 \"PROGRAM Jojo SKIP;SKIP;SKIP.\""
+    (topLevel1 parser1 "PROGRAM Jojo SKIP;SKIP;SKIP.")
+    (Just "SKIP; SKIP; SKIP")
+  assertEqual
+    "topLevel1 parser1 \"PROGRAM Jojo SKIP;SKIP;SKIP.\""
+    (topLevel1 parser1 "PROGRAM Jojo SKIP;SKIP;SKIP.")
+    (Just "SKIP; SKIP; SKIP")
+  assertEqual
+    "topLevel1 parser1 \"PROGRAM JoJo x4 = 123.5.\""
+    (topLevel1 parser1 "PROGRAM Jojo x4 = 123.5.")
+    (Just "x4:=123.5")
