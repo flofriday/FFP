@@ -8,5 +8,5 @@ main :: IO ()
 main = do
     handle <- openFile "./app/transition_system.txt" ReadMode
     contents <- hGetContents handle
-    putStrLn (parserTransitionSystem contents)
+    putStrLn (parseTransitionSystem contents)
     hClose handle
