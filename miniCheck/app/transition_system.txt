@@ -1,0 +1,3 @@
+--> pay
+pay -insert_coin-> select
+select -insert_coin-> select
