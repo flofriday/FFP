@@ -1,0 +1,7 @@
+# MiniCheck
+
+## Run
+
+```
+cabal run
+```
