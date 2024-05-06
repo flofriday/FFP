@@ -4,6 +4,7 @@
 --cabal update
 --cabal install --lib QuickCheck
 --```
+-- if necessary set the according packages
 
 -- Task 3 ----------------------------------------------------------------------
 import Data.Array
