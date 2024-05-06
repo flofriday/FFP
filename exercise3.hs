@@ -1,3 +1,10 @@
+--In order to run assignment 3, the library QuickCheck is needed. You can install it with:
+--
+--```
+--cabal update
+--cabal install --lib QuickCheck
+--```
+
 -- Task 3 ----------------------------------------------------------------------
 import Data.Array
 import Data.Array.Base (IArray (numElements))
