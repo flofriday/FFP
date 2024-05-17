@@ -58,7 +58,7 @@ executable miniCheck
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
-    -- other-modules: 
+    other-modules: TransitionSystem
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -66,7 +66,8 @@ executable miniCheck
     -- Other library packages from which modules are imported.
     build-depends:    base ^>=4.17.2.1,
                       parsec >= 3.1.17.0,
-                      mtl >= 2.3.1
+                      mtl >= 2.3.1,
+                      containers >= 0.7
 
     -- Directories containing source files.
     hs-source-dirs:   app

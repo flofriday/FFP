@@ -3,6 +3,8 @@
 ## Run
 
 ```
+cabal update
+cabal new-build
 cabal run
 ```
 

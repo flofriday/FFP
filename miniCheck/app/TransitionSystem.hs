@@ -1,25 +1,108 @@
 module TransitionSystem (parseTransitionSystem) where
 
--- Imported so we can play with applicative things later.
--- not qualified as mostly infix operators we'll be using.
-import Control.Applicative
--- Get the Identity monad from here:
+{- ORMOLU_DISABLE -}
+import Control.Applicative hiding (many)
 import Control.Monad.Identity (Identity)
-import Text.Parsec ((<?>))
-import Text.Parsec qualified as Parsec
+import Data.Map (Map)
+import qualified Data.Map as Map
+import Data.Set (Set)
+import qualified Data.Set as Set
+import Text.Parsec (ParseError, Parsec)
+import Text.Parsec hiding ((<|>), State)
+import Text.Parsec.String (Parser)
+{- ORMOLU_ENABLE -}
 
 -- parse :: Parsec.Parsec String -> String -> String
 -- parse rule text = Parsec.parse rule "(source)" text
+type State = String
 
-parseTransitionSystem :: String -> String
-parseTransitionSystem input =
-  case result of
-    Right v -> "success!"
-    Left err -> "error!"
-  where
-    result = helper input
 
-helper :: String -> Either Parsec.ParseError Char
-helper input = do
-  letters <- Parsec.parse Parsec.anyChar "(source)" input
-  return letters
+type Action = String
+
+type AP = (String, Bool)
+
+data TransitionSystem = TransitionSystem
+  { initial_states :: Set.Set State,
+    states :: Set State,
+    actions :: Set Action,
+    transition :: [(State, Action, State)],
+    label_functions :: Map State [AP] -- [(State, [AP])]
+  }
+  deriving (Show)
+
+whitespace :: Parser ()
+whitespace = skipMany (char ' ' <|> char '\t')
+
+lowerChar :: Parser Char
+lowerChar = oneOf (['a'..'z'] ++ ['A'..'Z'])
+
+identifier :: Parser String
+identifier = do
+  first <- lowerChar
+  rest <- many (lowerChar <|> char '_')
+  return (first:rest)
+
+parseInitial :: Parser (Set State)
+parseInitial = do
+  string "initial states"
+  whitespace
+  identifiers <- identifier `sepBy` (whitespace >> char ',' >> whitespace)
+  char '\n'
+  return (Set.fromList identifiers)
+
+parseStates :: Parser (Set State)
+parseStates = do
+  string "states"
+  whitespace
+  identifiers <- identifier `sepBy` (whitespace >> char ',' >> whitespace)
+  char '\n'
+  return (Set.fromList identifiers)
+
+parseActions :: Parser (Set Action)
+parseActions = do
+  string "actions"
+  whitespace
+  identifiers <- identifier `sepBy` (whitespace >> char ',' >> whitespace)
+  char '\n'
+  return (Set.fromList identifiers)
+
+parseTransition :: Parser (State, Action, State)
+parseTransition = do
+  string "trans" -- add stupid flag
+  whitespace
+  start_state <- identifier
+  whitespace
+  action <- identifier
+  whitespace
+  end_state <- identifier
+  char '\n'
+  return (start_state, action, end_state)
+
+parseAP :: Parser AP
+parseAP = do
+  minus <- optionMaybe (char '-')
+  ident <- identifier
+  let flag = case minus of
+               Just _  -> False
+               Nothing -> True
+  return (ident, flag)
+
+parseLabelFunction :: Parser (State, [AP])
+parseLabelFunction = do
+  string "labels"
+  whitespace
+  state <- identifier
+  char ':'
+  whitespace
+  labels <- parseAP `sepBy` (whitespace >> char ',' >> whitespace)
+  return (state, labels)
+
+
+parseTransitionSystem :: Parser TransitionSystem
+parseTransitionSystem = do
+  initial <- parseInitial
+  states <- parseStates
+  actions <- parseActions
+  transitions <- many parseTransition
+  labelFunctions <- many parseLabelFunction
+  return (TransitionSystem initial states actions transitions (Map.fromList labelFunctions))

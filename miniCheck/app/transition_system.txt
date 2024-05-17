@@ -1,3 +1,9 @@
---> pay
-pay -insert_coin-> select
-select -insert_coin-> select
+initial states pay
+states select, soda, beer
+actions insert_coin, get_beer, get_soda
+trans soda get_soda pay
+trans beer get_beer pay
+trans pay insert_coin select
+trans select TRUE beer
+trans select TRUE soda
+labels select: -x, y, -z, -a, b
