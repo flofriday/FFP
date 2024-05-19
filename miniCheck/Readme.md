@@ -4,7 +4,6 @@
 
 ```
 cabal update
-cabal new-build
 cabal run miniCheck "./app/transition_system.txt" "./app/computation_tree_logic.txt"
 ```
 
