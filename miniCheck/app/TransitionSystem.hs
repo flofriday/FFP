@@ -1,4 +1,4 @@
-module TransitionSystem (parseTransitionSystem) where
+module TransitionSystem (parseTransitionSystem, State, TransitionSystem(..)) where
 
 {- ORMOLU_DISABLE -}
 import Control.Applicative hiding (many)

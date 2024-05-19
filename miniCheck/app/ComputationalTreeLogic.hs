@@ -1,4 +1,4 @@
-module ComputationalTreeLogic (parseComputationalTreeLogic) where
+module ComputationalTreeLogic (parseComputationalTreeLogic, CtlFormula(..), PathFormula(..), StateFormula(..)) where
 
 {- ORMOLU_DISABLE -}
 import Control.Applicative hiding (many)

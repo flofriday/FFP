@@ -3,6 +3,7 @@ module Main where
 import System.IO
 import TransitionSystem
 import ComputationalTreeLogic
+import ModelChecking
 import Text.Parsec (parse)
 import System.Environment (getArgs)
 import Text.Printf (printf)
@@ -26,6 +27,9 @@ main = do
   let ctl = parse parseComputationalTreeLogic ctl_path ctl_contents
   print ctl
   hClose ctl_file
+  -- model checking
+  -- result <- modelCheck ts ctl
+  -- print result
 
 
 checkArgs :: [String] -> IO ()
