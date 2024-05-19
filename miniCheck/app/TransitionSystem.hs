@@ -12,10 +12,7 @@ import Text.Parsec hiding ((<|>), State)
 import Text.Parsec.String (Parser)
 {- ORMOLU_ENABLE -}
 
--- parse :: Parsec.Parsec String -> String -> String
--- parse rule text = Parsec.parse rule "(source)" text
 type State = String
-
 
 type Action = String
 

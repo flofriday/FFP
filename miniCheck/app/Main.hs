@@ -2,6 +2,7 @@ module Main where
 
 import System.IO
 import TransitionSystem
+import ComputationalTreeLogic
 import Text.Parsec (parse)
 import System.Environment (getArgs)
 import Text.Printf (printf)
@@ -11,15 +12,19 @@ main = do
   args <- getArgs
   checkArgs args
   let ts_path = args !! 0
-  --let ctl_path = args !! 1
-  file_handle <- openFile ts_path ReadMode
-  contents <- hGetContents file_handle
-  let ts = parse parseTransitionSystem ts_path contents
-  print ts
-  hClose file_handle
+  let ctl_path = args !! 1
+  ts_file <- openFile ts_path ReadMode
+  ts_contents <- hGetContents ts_file
+  let ts = parse parseTransitionSystem ts_path ts_contents
+  hClose ts_file
+  ctl_file <- openFile ts_path ReadMode
+  ctl_contents <- hGetContents ts_file
+  let ctl = parse parseTransitionSystem ctl_path ctl_contents
+  print ctl
+  hClose ctl_file
 
 
 checkArgs :: [String] -> IO ()
 checkArgs args
-  | length(args) == 1 = printf "Reading from path %s\n" (args !! 0)
-  | otherwise = error "Too few arguments. Please provide at exactly 1 argument."
+  | length(args) == 2 = printf "Reading from path %s and %s\n" (args !! 0) (args !! 1)
+  | otherwise = error "Too few or too many arguments. Please provide exactly 2 arguments."

@@ -7,3 +7,4 @@ trans pay insert_coin select
 trans select TRUE beer
 trans select TRUE soda
 labels select: -x, y, -z, -a, b
+

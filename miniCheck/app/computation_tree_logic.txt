@@ -1,0 +1,1 @@
+A (IMPLIES (X (AP ap1)) (E (U (AP ap2) (AP ap3))))
