@@ -5,7 +5,7 @@
 ```
 cabal update
 cabal new-build
-cabal run
+cabal run miniCheck "./transition_system.txt"
 ```
 
 ## Transition Systems (TS)
