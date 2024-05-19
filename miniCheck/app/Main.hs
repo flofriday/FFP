@@ -9,17 +9,21 @@ import Text.Printf (printf)
 
 main :: IO ()
 main = do
+  -- parse arguments
   args <- getArgs
   checkArgs args
   let ts_path = args !! 0
   let ctl_path = args !! 1
+  -- read and parse transition system file
   ts_file <- openFile ts_path ReadMode
   ts_contents <- hGetContents ts_file
   let ts = parse parseTransitionSystem ts_path ts_contents
+  print ts
   hClose ts_file
-  ctl_file <- openFile ts_path ReadMode
-  ctl_contents <- hGetContents ts_file
-  let ctl = parse parseTransitionSystem ctl_path ctl_contents
+  -- read and parse ctl file
+  ctl_file <- openFile ctl_path ReadMode
+  ctl_contents <- hGetContents ctl_file
+  let ctl = parse parseComputationalTreeLogic ctl_path ctl_contents
   print ctl
   hClose ctl_file
 

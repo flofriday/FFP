@@ -45,14 +45,22 @@ lowerChar = oneOf (['a'..'z'])
 identifier :: Parser String
 identifier = do
   first <- lowerChar
-  rest <- many (lowerChar <|> char '_')
+  rest <- many (lowerChar <|> char '_' <|> digit)
   return (first:rest)
 
 lParen :: Parser Char
-lParen = char '('
+lParen = do
+  whitespace
+  c <- char '('
+  whitespace
+  return c
 
 rParen :: Parser Char
-rParen = char ')'
+rParen = do
+  whitespace
+  c <- char ')'
+  whitespace
+  return c
 
 atomicProp :: Parser StateFormula
 atomicProp = do
@@ -64,163 +72,133 @@ atomicProp = do
 negation :: Parser StateFormula
 negation = do
   string "NOT"
-  whitespace
   lParen
-  whitespace
   f <- stateFormulaParser
-  whitespace
   rParen
   return (Not f)
 
 and_parser :: Parser StateFormula
 and_parser = do
   string "AND"
-  whitespace
   lParen
-  whitespace
   f1 <- stateFormulaParser
-  whitespace
-  f2 <- stateFormulaParser
-  whitespace
   rParen
-  return (And f1 f1)
+  lParen
+  f2 <- stateFormulaParser
+  rParen
+  return (And f1 f2)
 
 or_parser :: Parser StateFormula
 or_parser = do
   string "OR"
-  whitespace
   lParen
-  whitespace
   f1 <- stateFormulaParser
-  whitespace
-  f2 <- stateFormulaParser
-  whitespace
   rParen
-  return (Or f1 f1)
+  lParen
+  f2 <- stateFormulaParser
+  rParen
+  return (Or f1 f2)
 
 implies :: Parser StateFormula
 implies = do
   string "IMPLIES"
-  whitespace
   lParen
-  whitespace
   f1 <- stateFormulaParser
-  whitespace
+  rParen
+  lParen
   f2 <- stateFormulaParser
-  whitespace
   rParen
   return (Implies f1 f2)
 
 equivalent :: Parser StateFormula
 equivalent = do
   string "EQUIVALENT"
-  whitespace
   lParen
-  whitespace
   f1 <- stateFormulaParser
-  whitespace
+  rParen
+  lParen
   f2 <- stateFormulaParser
-  whitespace
   rParen
   return (Equivalent f1 f2)
 
 xor :: Parser StateFormula
 xor = do
   string "XOR"
-  whitespace
   lParen
-  whitespace
   f1 <- stateFormulaParser
-  whitespace
+  rParen
+  lParen
   f2 <- stateFormulaParser
-  whitespace
   rParen
   return (Xor f1 f2)
 
 exists :: Parser StateFormula
 exists = do
   string "EXISTS"
-  whitespace
   lParen
-  whitespace
   f <- pathFormulaParser
-  whitespace
   rParen
   return (Exists f)
 
 forall :: Parser StateFormula
 forall = do
   string "FORALL"
-  whitespace
   lParen
-  whitespace
   f <- pathFormulaParser
-  whitespace
   rParen
   return (Forall f)
 
 next :: Parser PathFormula
 next = do
   string "O"
-  whitespace
   lParen
-  whitespace
   f <- stateFormulaParser
-  whitespace
   rParen
   return (O f)
 
 until_parser :: Parser PathFormula
 until_parser = do
   string "U"
-  whitespace
   lParen
-  whitespace
   f1 <- stateFormulaParser
-  whitespace
+  rParen
+  lParen
   f2 <- stateFormulaParser
-  whitespace
   rParen
   return (U f1 f2)
 
 eventually :: Parser PathFormula
 eventually = do
   string "E"
-  whitespace
   lParen
-  whitespace
   f <- stateFormulaParser
-  whitespace
   rParen
   return (E f)
 
 always :: Parser PathFormula
 always = do
   string "A"
-  whitespace
   lParen
-  whitespace
   f <- stateFormulaParser
-  whitespace
   rParen
   return (A f)
 
 stateFormulaParser :: Parser StateFormula
-stateFormulaParser = atomicProp
-  <|> negation
-  <|> and_parser
-  <|> or_parser
-  <|> implies
-  <|> equivalent
-  <|> xor
-  <|> exists
-  <|> forall
+stateFormulaParser = try atomicProp
+  <|> try negation
+  <|> try and_parser
+  <|> try or_parser
+  <|> try implies
+  <|> try equivalent
+  <|> try xor
+  <|> try exists
+  <|> try forall
 
 pathFormulaParser :: Parser PathFormula
-pathFormulaParser = next
-  <|> until_parser
-  <|> eventually
-  <|> always
+pathFormulaParser = try next
+  <|> try until_parser
+  <|> try eventually
+  <|> try always
 
 
 parseComputationalTreeLogic :: Parser CtlFormula

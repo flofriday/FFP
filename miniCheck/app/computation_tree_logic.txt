@@ -1,1 +1,1 @@
-A (IMPLIES (X (AP ap1)) (E (U (AP ap2) (AP ap3))))
+FORALL (U (AND (AP ap1) (NOT (AP ap2))) (OR (AP ap3) (EXISTS (A (AP ap4)))))

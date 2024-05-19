@@ -63,15 +63,15 @@ ctl_system        = ctl_formula | ctl_formula newline ctl_system;
 ctl_formula       = state_formula | path_formula;
 state_formula     = "AP" identifier |
                     "NOT" "(" state_formula ")" |
-                    "AND" "(" state_formula state_formula ")" |
-                    "OR" "(" state_formula state_formula ")" |
-                    "IMPLIES" "(" state_formula state_formula ")" |
-                    "EQUIVALENT" "(" state_formula state_formula ")" |
-                    "XOR" "(" state_formula state_formula ")" |
+                    "AND" "(" state_formula ")" "(" state_formula ")" |
+                    "OR" "(" state_formula ")" "(" state_formula ")" |
+                    "IMPLIES" "(" state_formula ")" "(" state_formula ")" |
+                    "EQUIVALENT" "(" state_formula ")" "(" state_formula ")" |
+                    "XOR" "(" state_formula ")" "(" state_formula ")" |
                     "EXISTS" "(" path_formula ")" |
                     "FORALL" "(" path_formula ")" ;
 path_formula      = "O" "(" state_formula ")" |
-                    "U" "(" state_formula state_formula ")" |
+                    "U" "(" state_formula ")" "(" state_formula ")" |
                     "E" "(" state_formula ")" |
                     "A" "(" state_formula ")";
 
@@ -84,5 +84,5 @@ identifier        = lower_char {"_" | lower_char | digits};
 Example:
 
 ```
-A (IMPLIES (X (AP ap1)) (E (U (AP ap2) (AP ap3))))
+FORALL (U (AND (AP ap1) (NOT (AP ap2))) (OR (AP ap3) (EXISTS (A (AP ap4)))))
 ```
