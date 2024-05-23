@@ -7,6 +7,12 @@ cabal update
 cabal run miniCheck "./app/transition_system.txt" "./app/computation_tree_logic.txt"
 ```
 
+## Run all tests
+```
+cabal update
+cabal test --test-show-details=direct --test-option=--format=progress
+```
+
 ## Transition Systems (TS)
 
 Formally, a TS is a tuple $(S, Act, \to, I, AP, L)$, where
