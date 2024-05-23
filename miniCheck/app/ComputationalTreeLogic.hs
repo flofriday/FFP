@@ -37,7 +37,7 @@ data PathFormula = O StateFormula -- Next
   
 
 whitespace :: Parser ()
-whitespace = skipMany (char ' ' <|> char '\t')
+whitespace = skipMany (char ' ' <|> char '\t' <|> char '\n')
 
 lowerChar :: Parser Char
 lowerChar = oneOf (['a'..'z'])
@@ -202,5 +202,7 @@ pathFormulaParser = try next
 
 
 parseComputationalTreeLogic :: Parser CtlFormula
-parseComputationalTreeLogic = (StateCtl <$> stateFormulaParser) 
+parseComputationalTreeLogic = do
+  whitespace
+  (StateCtl <$> stateFormulaParser) 
   <|> (PathCtl <$> pathFormulaParser)
