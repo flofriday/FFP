@@ -25,7 +25,7 @@ data TransitionSystem = TransitionSystem
     transition :: [(State, Action, State)],
     label_functions :: Map State [AP] -- [(State, [AP])]
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 whitespace :: Parser ()
 whitespace = skipMany (char ' ' <|> char '\t')
