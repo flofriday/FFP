@@ -30,6 +30,9 @@ data TransitionSystem = TransitionSystem
 whitespace :: Parser ()
 whitespace = skipMany (char ' ' <|> char '\t')
 
+emptyLine :: Parser()
+emptyLine = skipMany (char ' ' <|> char '\t' <|> char '\n')
+
 lowerChar :: Parser Char
 lowerChar = oneOf (['a'..'z'] ++ ['A'..'Z'])
 
@@ -97,9 +100,15 @@ parseLabelFunction = do
 
 parseTransitionSystem :: Parser TransitionSystem
 parseTransitionSystem = do
+  emptyLine
   initial <- parseInitial
+  emptyLine
   states <- parseStates
+  emptyLine
   actions <- parseActions
+  emptyLine
   transitions <- many parseTransition
+  emptyLine
   labelFunctions <- many parseLabelFunction
+  emptyLine
   return (TransitionSystem initial states actions transitions (Map.fromList labelFunctions))
