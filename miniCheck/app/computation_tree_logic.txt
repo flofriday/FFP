@@ -1,1 +1,8 @@
-FORALL (U (AND (AP ap1) (NOT (AP ap2))) (OR (AP ap3) (EXISTS (A (AP ap4)))))
+FORALL (U 
+    (AND 
+        (AP ap1) 
+        (NOT (AP ap2))) 
+
+    (OR 
+        (AP ap3) 
+        (EXISTS (A (AP ap4)))))
