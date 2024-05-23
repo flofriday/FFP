@@ -31,14 +31,14 @@ Formally, a TS is a tuple $(S, Act, \to, I, AP, L)$, where
 - states: _pay_, _select_, _soda_, _beer_
 - actions: _get_soda_, _get_beer_, _insert_coin_
 
-```
+```ebnf
 transition_system = definition | definition newline transition_system;
 definition        = initial_state | normal_state | actions | transition | label_func;
 initial_state     = "initial state" identifier {"," identifier};
 normal_state      = "state" identifier {"," identifier};
 transition        = "trans" identifier (identifier | "TRU€") identifier;
-label_func        = "labels" identifier ":" label {"," label}
-label             = ["-"] identifier
+label_func        = "labels" identifier ":" label {"," label};
+label             = ["-"] identifier;
 
 newline           = "\n";
 lower_char        = "a" | "b" | "c" | ... | "z";
@@ -63,26 +63,30 @@ labels select: -x, y, -z, -a, b
 
 ## Computational Tree Logic (CTL)
 
-```
+```ebnf
 ctl_system        = ctl_formula | ctl_formula newline ctl_system;
 ctl_formula       = state_formula | path_formula;
-state_formula     = "AP" identifier |
-                    "NOT" "(" state_formula ")" |
-                    "AND" "(" state_formula ")" "(" state_formula ")" |
-                    "OR" "(" state_formula ")" "(" state_formula ")" |
-                    "IMPLIES" "(" state_formula ")" "(" state_formula ")" |
-                    "EQUIVALENT" "(" state_formula ")" "(" state_formula ")" |
-                    "XOR" "(" state_formula ")" "(" state_formula ")" |
-                    "EXISTS" "(" path_formula ")" |
-                    "FORALL" "(" path_formula ")" ;
-path_formula      = "O" "(" state_formula ")" |
-                    "U" "(" state_formula ")" "(" state_formula ")" |
-                    "E" "(" state_formula ")" |
-                    "A" "(" state_formula ")";
+
+state_formula     = "AP" identifier 
+                  | "NOT" "(" state_formula ")" 
+                  | "AND" "(" state_formula ")" "(" state_formula ")" 
+                  | "OR" "(" state_formula ")" "(" state_formula ")" 
+                  | "IMPLIES" "(" state_formula ")" "(" state_formula ")" 
+                  | "EQUIVALENT" "(" state_formula ")" "(" state_formula ")" 
+                  | "XOR" "(" state_formula ")" "(" state_formula ")" 
+                  | "EXISTS" "(" path_formula ")" 
+                  | "FORALL" "(" path_formula ")"
+                  ;
+                  
+path_formula      = "O" "(" state_formula ")" 
+                  | "U" "(" state_formula ")" "(" state_formula ")" 
+                  | "E" "(" state_formula ")" 
+                  | "A" "(" state_formula ")"
+                  ;
 
 newline           = "\n";
 lower_char        = "a" | "b" | "c" | ... | "z";
-digits           = "0" | "1" | "2" | ... | "9";
+digits            = "0" | "1" | "2" | ... | "9";
 identifier        = lower_char {"_" | lower_char | digits};
 ```
 
