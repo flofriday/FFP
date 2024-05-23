@@ -34,6 +34,25 @@ spec = do
         -- so there are now tests for it now.
         --result `shouldBe` Right (TransitionSystem {initial_states = Set.fromList ["pay"], states = Set.fromList ["beer","select","soda"], actions = Set.fromList ["get_beer","get_soda","insert_coin"], transition = [("soda","get_soda","pay"),("beer","get_beer","pay"),("pay","insert_coin","select"),("select","TRUE","beer"),("select","TRUE","soda")], label_functions = Map.fromList [("select",[("x",False),("y",True),("z",False),("a",False),("b",True)])]})
 
+    it "correct input with comments" $ do
+        let src = [r|
+            --  Just an example
+            initial states pay
+            states select, soda, beer
+            actions insert_coin, get_beer, get_soda
+
+            -- EXAMPLE-FIXME: Reinsert in the future
+            -- trans soda get_soda pay
+            trans beer get_beer pay
+            trans pay insert_coin select
+            trans select TRUE beer      -- Also trailing
+            trans select TRUE soda
+            labels select: -x, y, -z, -a, b
+            |]
+
+        let result = parse parseTransitionSystem "internal.txt" src
+        isRight result `shouldBe` True
+
     it "empty input" $ do
         let src =  ""
         let result = parse parseTransitionSystem "internal.txt" src

@@ -10,6 +10,7 @@ import qualified Data.Set as Set
 import Text.Parsec (ParseError, Parsec)
 import Text.Parsec hiding ((<|>), State)
 import Text.Parsec.String (Parser)
+import Control.Monad (void)
 {- ORMOLU_ENABLE -}
 
 type State = String
@@ -27,11 +28,17 @@ data TransitionSystem = TransitionSystem
   }
   deriving (Show, Eq)
 
+comment :: Parser ()
+comment = do
+  string "--"
+  manyTill anyChar (try (char '\n'))
+  return ()
+
 whitespace :: Parser ()
-whitespace = skipMany (char ' ' <|> char '\t')
+whitespace = skipMany (void (char ' ') <|> void (char '\t') <|> comment)
 
 emptyLine :: Parser()
-emptyLine = skipMany (char ' ' <|> char '\t' <|> char '\n')
+emptyLine = skipMany ( void (char ' ') <|> void (char '\t') <|> void (char '\n') <|> comment)
 
 lowerChar :: Parser Char
 lowerChar = oneOf (['a'..'z'] ++ ['A'..'Z'])

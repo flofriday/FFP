@@ -10,6 +10,7 @@ import qualified Data.Set as Set
 import Text.Parsec (ParseError, Parsec)
 import Text.Parsec hiding ((<|>), State)
 import Text.Parsec.String (Parser)
+import Control.Monad (void)
 {- ORMOLU_ENABLE -}
 
 -- parse :: Parsec.Parsec String -> String -> String
@@ -34,10 +35,16 @@ data PathFormula = O StateFormula -- Next
   | E StateFormula -- Eventually
   | A StateFormula -- Always
   deriving (Eq, Show)
-  
+
+
+comment :: Parser ()
+comment = do
+  string "--"
+  manyTill anyChar (try (char '\n'))
+  return ()
 
 whitespace :: Parser ()
-whitespace = skipMany (char ' ' <|> char '\t' <|> char '\n')
+whitespace = skipMany (void (char ' ') <|> void(char '\t') <|> void(char '\n') <|> comment)
 
 lowerChar :: Parser Char
 lowerChar = oneOf (['a'..'z'])
@@ -204,5 +211,5 @@ pathFormulaParser = try next
 parseComputationalTreeLogic :: Parser CtlFormula
 parseComputationalTreeLogic = do
   whitespace
-  (StateCtl <$> stateFormulaParser) 
+  (StateCtl <$> stateFormulaParser)
   <|> (PathCtl <$> pathFormulaParser)

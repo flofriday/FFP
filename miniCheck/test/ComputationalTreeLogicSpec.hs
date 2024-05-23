@@ -32,6 +32,24 @@ spec = do
         |] 
         let result = parse parseComputationalTreeLogic "internal.txt" src
         isRight result `shouldBe` True
+    
+    it "correct input with comments" $ do
+        let src = [r|
+            -- Just a simple example
+            FORALL (U 
+                (AND 
+                    (AP ap1) -- Sometimes we have them trailing
+                    (NOT (AP ap2))) 
+
+                -- Let's try or here
+                --(AND 
+                  (OR
+                    (AP ap3) 
+                    (EXISTS 
+                        (A (AP ap4))))) 
+        |] 
+        let result = parse parseComputationalTreeLogic "internal.txt" src
+        isRight result `shouldBe` True
 
 
     it "empty input" $ do

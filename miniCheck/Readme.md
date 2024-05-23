@@ -45,6 +45,9 @@ lower_char        = "a" | "b" | "c" | ... | "z";
 identifier        = lower_char {"_" | lower_char};
 ```
 
+To improve usability you can also write comments which are haskell like comments
+and start with `--`.
+
 Example:
 
 ```
@@ -89,6 +92,9 @@ lower_char        = "a" | "b" | "c" | ... | "z";
 digits            = "0" | "1" | "2" | ... | "9";
 identifier        = lower_char {"_" | lower_char | digits};
 ```
+
+To improve usability you can also write comments which are haskell like comments
+and start with `--`.
 
 Example:
 
