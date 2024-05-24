@@ -44,7 +44,7 @@ comment = do
   return ()
 
 whitespace :: Parser ()
-whitespace = skipMany (void (char ' ') <|> void(char '\t') <|> void(char '\n') <|> comment)
+whitespace = skipMany (void (char ' ') <|> void (char '\t') <|> void (char '\n') <|> comment)
 
 lowerChar :: Parser Char
 lowerChar = oneOf (['a'..'z'])
@@ -145,15 +145,25 @@ exists = do
   lParen
   f <- pathFormulaParser
   rParen
-  return (Exists f)
+  return $ desugar f
+  where 
+    desugar f = case f of
+      (E g) -> Exists (U State_True g)
+      (A g) -> Not (Forall (U State_True (Not g)))
+      _ -> Exists f
 
-forall :: Parser StateFormula
-forall = do
+forAll :: Parser StateFormula
+forAll = do
   string "FORALL"
   lParen
   f <- pathFormulaParser
   rParen
-  return (Forall f)
+  return $ desugar f
+  where
+    desugar f = case f of 
+      (E g) -> Forall (U State_True g)
+      (A g) -> Not (Exists (U State_True (Not g)))
+      _ -> Forall f
 
 next :: Parser PathFormula
 next = do
@@ -199,7 +209,7 @@ stateFormulaParser = try atomicProp
   <|> try equivalent
   <|> try xor
   <|> try exists
-  <|> try forall
+  <|> try forAll
 
 pathFormulaParser :: Parser PathFormula
 pathFormulaParser = try next
