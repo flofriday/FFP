@@ -9,7 +9,7 @@ import ComputationalTreeLogic (parseComputationalTreeLogic)
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 import Text.Parsec (parse)
-import Data.Either (isRight, isLeft)
+import Data.Either (isRight, isLeft, fromRight)
 
 spec :: Spec
 spec = do
@@ -56,4 +56,20 @@ spec = do
         let src =  ""
         let result = parse parseComputationalTreeLogic "internal.txt" src
         isLeft result `shouldBe` True
+
+    it "desugar: or" $ do
+        let src = "OR (AP x) (AP y)"
+        let result = parse parseComputationalTreeLogic "internal.txt" src
+        result `shouldBe` Right (StateCtl (Not (And (Not (AtomicP "x")) (Not (AtomicP "y")))))
+
+    it "desugar: Exists eventually" $ do
+        let src = "EXISTS (E (AP x))"
+        let result = parse parseComputationalTreeLogic "internal.txt" src
+        result `shouldBe` Right (StateCtl (Exists (U (State_True) (AtomicP "x"))))
+
+    it "desugar: Forall eventually" $ do
+        let src = "FORALL (E (AP x))"
+        let result = parse parseComputationalTreeLogic "internal.txt" src
+        result `shouldBe` Right (StateCtl (Forall (U (State_True) (AtomicP "x"))))
+        
     

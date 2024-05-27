@@ -104,7 +104,7 @@ or_parser = do
   lParen
   f2 <- stateFormulaParser
   rParen
-  return (Or f1 f2)
+  return (Not (And (Not (f1)) (Not (f2))))
 
 implies :: Parser StateFormula
 implies = do
