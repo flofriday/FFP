@@ -71,5 +71,38 @@ spec = do
         let src = "FORALL (E (AP x))"
         let result = parse parseComputationalTreeLogic "internal.txt" src
         result `shouldBe` Right (StateCtl (Forall (U (State_True) (AtomicP "x"))))
-        
+
+    it "desugar: Exists always" $ do
+        let src = "EXISTS (A (AP x))"
+        let result = parse parseComputationalTreeLogic "internal.txt" src
+        result `shouldBe` Right (StateCtl (Not (Forall (U State_True (Not (AtomicP "x"))))))
+
+    it "desugar: Forall always" $ do
+        let src = "FORALL (A (AP x))"
+        let result = parse parseComputationalTreeLogic "internal.txt" src
+        result `shouldBe` Right (StateCtl (Not (Exists (U State_True (Not (AtomicP "x"))))))
+
+    it "desugar: implies" $ do
+        let src = "IMPLIES (AP x) (AP y)"
+        let result = parse parseComputationalTreeLogic "internal.txt" src
+        result `shouldBe` Right (StateCtl (Not (And (Not (Not (AtomicP "x"))) (Not (AtomicP "y")))))
+
+    it "desugar: equivalent" $ do
+        let src = "EQUIVALENT (AP x) (AP y)"
+        let result = parse parseComputationalTreeLogic "internal.txt" src
+
+        let first_implies = (Not (And (Not (Not (AtomicP "x"))) (Not (AtomicP "y"))))
+        let second_implies = (Not (And (Not (Not (AtomicP "y"))) (Not (AtomicP "x"))))
+        result `shouldBe` Right (StateCtl (And (first_implies) (second_implies)))
+
+    it "desugar: xor" $ do
+    let src = "XOR (AP x) (AP y)"
+    let result = parse parseComputationalTreeLogic "internal.txt" src
+
+    let phi_1 = AtomicP "x"
+    let phi_2 = AtomicP "y"
+    let first_and = (And (phi_1) (Not (phi_2)))
+    let second_and = (And (phi_2) (Not (phi_1)))
+
+    result `shouldBe` Right (StateCtl (Not (And (Not (first_and)) (Not (second_and)))))
     

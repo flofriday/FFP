@@ -13,8 +13,6 @@ import Text.Parsec.String (Parser)
 import Control.Monad (void)
 {- ORMOLU_ENABLE -}
 
--- parse :: Parsec.Parsec String -> String -> String
--- parse rule text = Parsec.parse rule "(source)" text
 data CtlFormula = StateCtl StateFormula | PathCtl PathFormula
   deriving (Eq, Show)
 
@@ -35,6 +33,25 @@ data PathFormula = O StateFormula -- Next
   | E StateFormula -- Eventually
   | A StateFormula -- Always
   deriving (Eq, Show)
+
+
+desugar :: StateFormula -> StateFormula
+-- desugaring
+desugar (Exists f) = case f of
+  (E g) -> Exists (U State_True g)
+  (A g) -> Not (Forall (U State_True (Not g)))
+  _ -> Exists f
+desugar (Forall f) = case f of 
+  (E g) -> Forall (U State_True g)
+  (A g) -> Not (Exists (U State_True (Not g)))
+  _ -> Forall f
+desugar (Or (f1) (f2)) = (Not (And (Not (f1)) (Not (f2))))
+desugar (Implies (f1) (f2)) = desugar (Or (Not (f1)) (f2))
+desugar (Equivalent (f1) (f2)) = desugar (And (Implies (f1) (f2)) (Implies (f2) (f1)))
+desugar (Xor (f1) (f2)) = desugar (Or (And (f1) (Not (f2))) (And (f2) (Not (f1))))
+ -- no desugaring but apply recursively
+desugar (And (f1) (f2)) = (And (desugar f1) (desugar f2))
+desugar formula = formula
 
 
 comment :: Parser ()
@@ -104,7 +121,7 @@ or_parser = do
   lParen
   f2 <- stateFormulaParser
   rParen
-  return (Not (And (Not (f1)) (Not (f2))))
+  return $ desugar (Or (f1) (f2))
 
 implies :: Parser StateFormula
 implies = do
@@ -115,7 +132,7 @@ implies = do
   lParen
   f2 <- stateFormulaParser
   rParen
-  return (Implies f1 f2)
+  return $ desugar (Implies f1 f2)
 
 equivalent :: Parser StateFormula
 equivalent = do
@@ -126,7 +143,7 @@ equivalent = do
   lParen
   f2 <- stateFormulaParser
   rParen
-  return (Equivalent f1 f2)
+  return $ desugar (Equivalent f1 f2)
 
 xor :: Parser StateFormula
 xor = do
@@ -137,7 +154,7 @@ xor = do
   lParen
   f2 <- stateFormulaParser
   rParen
-  return (Xor f1 f2)
+  return $ desugar (Xor f1 f2)
 
 exists :: Parser StateFormula
 exists = do
@@ -145,12 +162,8 @@ exists = do
   lParen
   f <- pathFormulaParser
   rParen
-  return $ desugar f
-  where 
-    desugar f = case f of
-      (E g) -> Exists (U State_True g)
-      (A g) -> Not (Forall (U State_True (Not g)))
-      _ -> Exists f
+  return $ desugar (Exists f)
+
 
 forAll :: Parser StateFormula
 forAll = do
@@ -158,12 +171,7 @@ forAll = do
   lParen
   f <- pathFormulaParser
   rParen
-  return $ desugar f
-  where
-    desugar f = case f of 
-      (E g) -> Forall (U State_True g)
-      (A g) -> Not (Exists (U State_True (Not g)))
-      _ -> Forall f
+  return $ desugar (Forall f)
 
 next :: Parser PathFormula
 next = do
