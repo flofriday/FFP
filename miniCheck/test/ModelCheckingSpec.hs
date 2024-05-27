@@ -110,6 +110,27 @@ spec = do
         let ctl = StateCtl (And (AtomicP "select") (AtomicP "beer"))
         let result = satFun ts ctl
         result `shouldBe` Set.fromList ["beer"]
+    it "set check - negation - basic" $ do
+        let ts = TransitionSystem { 
+            initial_states=(Set.fromList ["pay"]),
+            states= (Set.fromList ["select", "soda", "pay", "beer"]),
+            actions=(Set.fromList ["get_soda", "get_beer", "insert_coin"]),
+            transition=[
+                ("pay", "insert_coin", "select"), 
+                ("beer", "get_beer", "pay"), 
+                ("select", "TRUE", "beer"), 
+                ("select", "TRUE", "soda"), 
+                ("soda", "get_soda", "pay")
+            ],
+            label_functions=(Map.fromList [
+                ("select", [("select", True), ("soda", False), ("beer", False)]), 
+                ("soda", [("select", False), ("soda", True), ("beer", True)]), 
+                ("beer", [("select", True), ("soda", False), ("beer", True)])
+            ])
+        }
+        let ctl = StateCtl (Not (AtomicP "soda"))
+        let result = satFun ts ctl
+        result `shouldBe` Set.fromList ["select", "beer", "pay"]
 
 
 
