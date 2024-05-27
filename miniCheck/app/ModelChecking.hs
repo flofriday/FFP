@@ -44,7 +44,24 @@ satFun ts (StateCtl (Not f)) = states ts `Set.difference` satFun ts (StateCtl f)
 all states where there is at least one successor state that satisfies f
 -}
 satFun ts (StateCtl (Exists (O f))) = Set.fromList [s | s <- Set.toList (states ts), not (Set.null ((getSuccessors ts s) `Set.intersection` (satFun ts (StateCtl f))))]
--- satFun ts (StateCtl (Exists (O f))) = Set.fromList [s | s <- Set.toList (states ts), any (`Set.member` satFun ts (StateCtl f)) (getSuccessors ts s)]
+{- 
+** Exist Until f1 f2 **
+all states where there is at least one successor state that satisfies f
+-}
+satFun ts (StateCtl (Exists (U f1 f2))) = t `Set.union` recursive_solution
+    where
+        t = satFun ts (StateCtl f2)
+        recursive_solution = compute_until_satisfaction ts (StateCtl f1) t
+--satFun ts (Exists (A (f)))
+
+-- Algorithm 2 from the assignment description
+compute_until_satisfaction :: TransitionSystem -> CtlFormula -> Set State -> Set State
+compute_until_satisfaction ts phi t
+    | not (Set.null solution_part) = compute_until_satisfaction ts phi (t `Set.union` solution_part)
+    | otherwise = t
+    where
+        solution_part = Set.fromList [s | s <- Set.toList (satFun ts phi `Set.difference` t), not (Set.null ((getSuccessors ts s) `Set.intersection` t))]
+
 
 getAllAtomicPropsOfState :: TransitionSystem -> State -> [AP]
 getAllAtomicPropsOfState ts state = Map.findWithDefault  [] state map
