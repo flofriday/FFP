@@ -131,8 +131,28 @@ spec = do
         let ctl = StateCtl (Not (AtomicP "soda"))
         let result = satFun ts ctl
         result `shouldBe` Set.fromList ["select", "beer", "pay"]
-
-
+    it "set check - exists next - basic" $ do
+        let ts = TransitionSystem { 
+            initial_states=(Set.fromList ["pay"]),
+            states= (Set.fromList ["select", "soda", "pay", "beer"]),
+            actions=(Set.fromList ["get_soda", "get_beer", "insert_coin"]),
+            transition=[
+                ("pay", "insert_coin", "select"), 
+                ("beer", "get_beer", "pay"), 
+                ("select", "TRUE", "beer"), 
+                ("select", "TRUE", "soda"), 
+                ("soda", "get_soda", "pay")
+            ],
+            label_functions=(Map.fromList [
+                ("pay", [("select", True), ("soda", False), ("beer", False), ("pay", True)]), 
+                ("select", [("select", True), ("soda", False), ("beer", False), ("pay", False)]), 
+                ("soda", [("select", False), ("soda", True), ("beer", True), ("pay", False)]), 
+                ("beer", [("select", True), ("soda", False), ("beer", True), ("pay", False)])
+            ])
+        }
+        let ctl = StateCtl (Exists (O (AtomicP "pay")))
+        let result = satFun ts ctl
+        result `shouldBe` Set.fromList ["soda", "beer"]
 
 {-
 ## simple example:
