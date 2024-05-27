@@ -42,7 +42,7 @@ desugar (Exists f) = case f of
   (A g) -> Not (Forall (U State_True (Not g)))
   _ -> Exists f
 desugar (Forall f) = case f of 
-  (E g) -> Forall (U State_True g)
+  (E g) -> Not (Exists (A (Not (g))))
   (A g) -> Not (Exists (U State_True (Not g)))
   _ -> Forall f
 desugar (Or (f1) (f2)) = (Not (And (Not (f1)) (Not (f2))))

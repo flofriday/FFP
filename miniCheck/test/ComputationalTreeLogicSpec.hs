@@ -70,7 +70,7 @@ spec = do
     it "desugar: Forall eventually" $ do
         let src = "FORALL (E (AP x))"
         let result = parse parseComputationalTreeLogic "internal.txt" src
-        result `shouldBe` Right (StateCtl (Forall (U (State_True) (AtomicP "x"))))
+        result `shouldBe` Right (StateCtl (Not (Exists (A (Not (AtomicP "x"))))))
 
     it "desugar: Exists always" $ do
         let src = "EXISTS (A (AP x))"
