@@ -46,13 +46,20 @@ all states where there is at least one successor state that satisfies f
 satFun ts (StateCtl (Exists (O f))) = Set.fromList [s | s <- Set.toList (states ts), not (Set.null ((getSuccessors ts s) `Set.intersection` (satFun ts (StateCtl f))))]
 {- 
 ** Exist Until f1 f2 **
-all states where there is at least one successor state that satisfies f
+all states where f1 holds until f2 becomes active. 
+Trivially holds in states where f2 is active since f1 does not need to hold.
 -}
 satFun ts (StateCtl (Exists (U f1 f2))) = t `Set.union` recursive_solution
     where
         t = satFun ts (StateCtl f2)
         recursive_solution = compute_until_satisfaction ts (StateCtl f1) t
---satFun ts (Exists (A (f)))
+{- 
+** Exist always f1**
+there exists at least one path where f always holds
+-}
+satFun ts (StateCtl (Exists (A (f)))) = compute_always_satisfaction ts t
+    where
+        t = satFun ts (StateCtl f)
 
 -- Algorithm 2 from the assignment description
 compute_until_satisfaction :: TransitionSystem -> CtlFormula -> Set State -> Set State
@@ -61,6 +68,14 @@ compute_until_satisfaction ts phi t
     | otherwise = t
     where
         solution_part = Set.fromList [s | s <- Set.toList (satFun ts phi `Set.difference` t), not (Set.null ((getSuccessors ts s) `Set.intersection` t))]
+
+-- Algorithm 3 from the assignment description
+compute_always_satisfaction :: TransitionSystem -> Set State -> Set State
+compute_always_satisfaction ts t
+    | not (Set.null solution_part) = compute_always_satisfaction ts (t `Set.difference` solution_part)
+    | otherwise = t
+    where
+        solution_part = Set.fromList [s | s <- Set.toList t, Set.null ((getSuccessors ts s) `Set.intersection` t)]
 
 
 getAllAtomicPropsOfState :: TransitionSystem -> State -> [AP]
