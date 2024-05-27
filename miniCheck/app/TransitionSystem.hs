@@ -1,4 +1,4 @@
-module TransitionSystem (parseTransitionSystem, State, TransitionSystem(..)) where
+module TransitionSystem (parseTransitionSystem, TransitionSystem(..), State, AP, Action) where
 
 {- ORMOLU_DISABLE -}
 import Control.Applicative hiding (many)
@@ -20,7 +20,7 @@ type Action = String
 type AP = (String, Bool)
 
 data TransitionSystem = TransitionSystem
-  { initial_states :: Set.Set State,
+  { initial_states :: Set State,
     states :: Set State,
     actions :: Set Action,
     transition :: [(State, Action, State)],
