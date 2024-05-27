@@ -26,4 +26,107 @@ spec = do
         let ctl = StateCtl (State_True)
         let result = modelCheck ts ctl
         result `shouldBe` True
+    it "set check single atomic proposition - single AP" $ do
+        let ts = TransitionSystem { 
+            initial_states=(Set.fromList ["pay"]),
+            states= (Set.fromList ["select", "soda", "pay", "beer"]),
+            actions=(Set.fromList ["get_soda", "get_beer", "insert_coin"]),
+            transition=[
+                ("pay", "insert_coin", "select"), 
+                ("beer", "get_beer", "pay"), 
+                ("select", "TRUE", "beer"), 
+                ("select", "TRUE", "soda"), 
+                ("soda", "get_soda", "pay")
+            ],
+            label_functions=(Map.fromList [
+                ("select", [("select", True), ("soda", False), ("beer", False)]), 
+                ("soda", [("select", False), ("soda", True), ("beer", False)]), 
+                ("beer", [("select", False), ("soda", False), ("beer", True)])
+            ])
+        }
+        let ctl = StateCtl ((AtomicP "select"))
+        let result = satFun ts ctl
+        result `shouldBe` Set.fromList ["select"]
+    it "set check single atomic proposition - multiple AP" $ do
+        let ts = TransitionSystem { 
+            initial_states=(Set.fromList ["pay"]),
+            states= (Set.fromList ["select", "soda", "pay", "beer"]),
+            actions=(Set.fromList ["get_soda", "get_beer", "insert_coin"]),
+            transition=[
+                ("pay", "insert_coin", "select"), 
+                ("beer", "get_beer", "pay"), 
+                ("select", "TRUE", "beer"), 
+                ("select", "TRUE", "soda"), 
+                ("soda", "get_soda", "pay")
+            ],
+            label_functions=(Map.fromList [
+                ("select", [("select", True), ("soda", False), ("beer", False)]), 
+                ("soda", [("select", False), ("soda", True), ("beer", False)]), 
+                ("beer", [("select", False), ("soda", True), ("beer", True)])
+            ])
+        }
+        let ctl = StateCtl ((AtomicP "soda"))
+        let result = satFun ts ctl
+        result `shouldBe` Set.fromList ["soda", "beer"]
+    it "set check and with empty result" $ do
+        let ts = TransitionSystem { 
+            initial_states=(Set.fromList ["pay"]),
+            states= (Set.fromList ["select", "soda", "pay", "beer"]),
+            actions=(Set.fromList ["get_soda", "get_beer", "insert_coin"]),
+            transition=[
+                ("pay", "insert_coin", "select"), 
+                ("beer", "get_beer", "pay"), 
+                ("select", "TRUE", "beer"), 
+                ("select", "TRUE", "soda"), 
+                ("soda", "get_soda", "pay")
+            ],
+            label_functions=(Map.fromList [
+                ("select", [("select", True), ("soda", False), ("beer", False)]), 
+                ("soda", [("select", False), ("soda", True), ("beer", False)]), 
+                ("beer", [("select", True), ("soda", False), ("beer", True)])
+            ])
+        }
+        let ctl = StateCtl (And (AtomicP "select") (AtomicP "soda"))
+        let result = satFun ts ctl
+        result `shouldBe` Set.fromList []
+    it "set check and with non empty result" $ do
+        let ts = TransitionSystem { 
+            initial_states=(Set.fromList ["pay"]),
+            states= (Set.fromList ["select", "soda", "pay", "beer"]),
+            actions=(Set.fromList ["get_soda", "get_beer", "insert_coin"]),
+            transition=[
+                ("pay", "insert_coin", "select"), 
+                ("beer", "get_beer", "pay"), 
+                ("select", "TRUE", "beer"), 
+                ("select", "TRUE", "soda"), 
+                ("soda", "get_soda", "pay")
+            ],
+            label_functions=(Map.fromList [
+                ("select", [("select", True), ("soda", False), ("beer", False)]), 
+                ("soda", [("select", False), ("soda", True), ("beer", True)]), 
+                ("beer", [("select", True), ("soda", False), ("beer", True)])
+            ])
+        }
+        let ctl = StateCtl (And (AtomicP "select") (AtomicP "beer"))
+        let result = satFun ts ctl
+        result `shouldBe` Set.fromList ["beer"]
+
+
+
+{-
+## simple example:
         
+let src = [r|
+    initial states pay
+    states select, soda, beer
+    actions insert_coin, get_beer, get_soda
+    trans soda get_soda pay
+    trans beer get_beer pay
+    trans pay insert_coin select
+    trans select TRUE beer
+    trans select TRUE soda
+    labels select: select, -soda, -beer
+    labels soda: -select, soda, -beer
+    labels beer: -select, -soda, beer
+    |]
+-}

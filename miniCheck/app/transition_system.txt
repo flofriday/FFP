@@ -6,5 +6,7 @@ trans beer get_beer pay
 trans pay insert_coin select
 trans select TRUE beer
 trans select TRUE soda
-labels select: -x, y, -z, -a, b
+labels select: select, -soda, -beer
+labels soda: -select, soda, -beer
+labels beer: -select, -soda, beer
 
