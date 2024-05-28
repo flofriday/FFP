@@ -114,7 +114,10 @@ parseLabelFunction = do
 verifyTransitionSystem :: TransitionSystem -> Maybe String
 verifyTransitionSystem ts
   | not (initial_states ts `Set.isSubsetOf` states ts) = Just "not all initial states are valid states"
+  | not (transStates `Set.isSubsetOf` states ts) = Just "not all transition states are valid states"
   | otherwise = Nothing
+  where
+    transStates = Set.fromList $ concatMap (\(s1, _, s2) -> [s1, s2]) (transition ts)
 
 
 parseTransitionSystem :: Parser TransitionSystem
@@ -134,6 +137,6 @@ parseTransitionSystem = do
   case verifyTransitionSystem ts of
     (Just err) -> fail err
     _ -> return ts
-    
+
 
   --fail "flo isn't happy"
