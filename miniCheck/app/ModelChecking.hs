@@ -54,7 +54,7 @@ satFun ts (StateCtl (Exists (U f1 f2))) = t `Set.union` recursive_solution
         t = satFun ts (StateCtl f2)
         recursive_solution = compute_until_satisfaction ts (StateCtl f1) t
 {- 
-** Exist always f1**
+** Exist always f**
 there exists at least one path where f always holds
 -}
 satFun ts (StateCtl (Exists (A (f)))) = compute_always_satisfaction ts t

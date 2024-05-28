@@ -234,13 +234,13 @@ spec = do
             label_functions=(Map.fromList [
                 ("pay", [("select", False), ("soda", True), ("beer", False), ("pay", False)]), 
                 ("select", [("select", False), ("soda", True), ("beer", False), ("pay", False)]), 
-                ("soda", [("select", False), ("soda", False), ("beer", False), ("pay", False)]), 
-                ("beer", [("select", False), ("soda", True), ("beer", False), ("pay", False)])
+                ("soda", [("select", False), ("soda", True), ("beer", False), ("pay", False)]), 
+                ("beer", [("select", False), ("soda", False), ("beer", False), ("pay", False)])
             ])
         }
         let ctl = StateCtl (Exists (A (AtomicP "soda")))
         let result = satFun ts ctl
-        result `shouldBe` Set.fromList ["pay", "select", "beer"]
+        result `shouldBe` Set.fromList ["pay", "select", "soda"]
 
 {-
 ## simple example:
