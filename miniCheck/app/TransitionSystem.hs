@@ -35,7 +35,7 @@ comment = do
   return ()
 
 whitespace :: Parser ()
-whitespace = skipMany (void (char ' ') <|> void (char '\t') <|> comment)
+whitespace = skipMany (void (char ' ') <|> void (char '\t'))
 
 emptyLine :: Parser()
 emptyLine = skipMany ( void (char ' ') <|> void (char '\t') <|> void (char '\n') <|> comment)
