@@ -32,7 +32,7 @@ data TransitionSystem = TransitionSystem
 comment :: Parser ()
 comment = do
   string "--"
-  manyTill anyChar (try (char '\n'))
+  manyTill anyChar (try (void (char '\n') <|> eof))
   return ()
 
 whitespace :: Parser ()
@@ -54,7 +54,7 @@ parseInitial :: Parser (Set State)
 parseInitial = do
   string "initial states"
   whitespace
-  identifiers <- identifier `sepBy` try (whitespace >> char ',' >> whitespace)
+  identifiers <- identifier `sepBy1` try (whitespace >> char ',' >> whitespace)
   whitespace
   char '\n'
   return (Set.fromList identifiers)
@@ -63,7 +63,7 @@ parseStates :: Parser (Set State)
 parseStates = do
   string "states"
   whitespace
-  identifiers <- identifier `sepBy` try (whitespace >> char ',' >> whitespace)
+  identifiers <- identifier `sepBy1` try (whitespace >> char ',' >> whitespace)
   whitespace
   char '\n'
   return (Set.fromList identifiers)
@@ -106,7 +106,7 @@ parseLabelFunction = do
   state <- identifier
   char ':'
   whitespace
-  labels <- parseAP `sepBy` try (whitespace >> char ',' >> whitespace)
+  labels <- parseAP `sepBy1` try (whitespace >> char ',' >> whitespace)
   whitespace
   void (char '\n') <|> eof
   return (state, labels)
