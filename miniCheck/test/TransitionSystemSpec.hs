@@ -94,7 +94,7 @@ spec = do
  
     it "initial states exists" $ do
         let src = [r|
-            initial states notARealState
+            initial states doesNotExist 
             states a 
             actions x 
             trans a TRUE a 
@@ -146,7 +146,22 @@ spec = do
             states a, b 
             actions x 
             trans a TRUE a 
+            trans b TRUE b
             labels a: b 
+            labels b: b
+            |]
+
+        let result = parse parseTransitionSystem "internal.txt" src
+        isLeft result `shouldBe` True
+
+    it "every state is not terminal" $ do
+        let src = [r|
+            initial states a
+            states a, b 
+            actions x 
+            trans a TRUE a 
+            trans a TRUE b
+            labels a: a 
             labels b: b
             |]
 

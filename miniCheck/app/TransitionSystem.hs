@@ -114,12 +114,14 @@ parseLabelFunction = do
 verifyTransitionSystem :: TransitionSystem -> Maybe String
 verifyTransitionSystem ts
   | not (initial_states ts `Set.isSubsetOf` states ts) = Just "not all initial states are valid states"
+  | transSrcStates /= states ts = Just "Terminal states are forbidden (at least one state has no outgoing edge)"
   | not (transStates `Set.isSubsetOf` states ts) = Just "not all transition states are valid states"
   | not (transActions `Set.isSubsetOf` actions ts) = Just "not all transition actions are valid actions"
   | Map.keysSet (label_functions ts) /= states ts = Just "every state must have a labeling function"
   | not everyStateLabelsItself = Just "Every label function must label the state it is of"
   | otherwise = Nothing
   where
+    transSrcStates = Set.fromList $ map (\(s1, _, _) -> s1) (transition ts)
     transStates = Set.fromList $ concatMap (\(s1, _, s2) -> [s1, s2]) (transition ts)
     transActions = Set.fromList $ filter (\x -> x /= "TRUE") (map (\(_, a, _) -> a) (transition ts))
     doesLabelItself (s, ap) = elem (s, True) ap
