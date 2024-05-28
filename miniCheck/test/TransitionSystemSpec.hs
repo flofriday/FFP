@@ -8,8 +8,10 @@ import TransitionSystem
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 import Text.Parsec (parse)
-import Data.Either (isRight, isLeft)
-import TransitionSystem (parseTransitionSystem)
+import Data.Either (isRight, isLeft, fromRight)
+import qualified Data.Either as Either
+import qualified Data.Maybe as Maybe
+import TransitionSystem (parseTransitionSystem, TransitionSystem (label_functions))
 
 spec :: Spec
 spec = do
@@ -167,3 +169,19 @@ spec = do
 
         let result = parse parseTransitionSystem "internal.txt" src
         isLeft result `shouldBe` True
+
+    it "fill empty AP" $ do
+        let src = [r|
+            initial states a
+            states a, b
+            actions x
+            trans a TRUE a
+            trans b TRUE b
+            labels a: a
+            labels b: b
+            |]
+        let result = parse parseTransitionSystem "internal.txt" src
+        isRight result `shouldBe` True
+
+        let ts = fromRight (error "Expected Right but got Left") result
+        elem ("b", False) (Maybe.fromJust (Map.lookup "a" (label_functions ts))) `shouldBe` True

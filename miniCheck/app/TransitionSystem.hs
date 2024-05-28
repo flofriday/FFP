@@ -123,10 +123,18 @@ verifyTransitionSystem ts
   where
     transSrcStates = Set.fromList $ map (\(s1, _, _) -> s1) (transition ts)
     transStates = Set.fromList $ concatMap (\(s1, _, s2) -> [s1, s2]) (transition ts)
-    transActions = Set.fromList $ filter (\x -> x /= "TRUE") (map (\(_, a, _) -> a) (transition ts))
+    transActions = Set.fromList $ filter (/= "TRUE") (map (\(_, a, _) -> a) (transition ts))
     doesLabelItself (s, ap) = elem (s, True) ap
     everyStateLabelsItself = all doesLabelItself (Map.toList (label_functions ts))
 
+
+fillEmptyAP:: TransitionSystem -> TransitionSystem
+fillEmptyAP (TransitionSystem initial states actions trans labels) = TransitionSystem initial states actions trans newLabels
+  where
+    newLabels = Map.fromList $ map (\(k, v) -> (k,  fill v) ) (Map.toList labels)
+    fill apList = apList ++ map (\n -> (n, False))  (missingLabels apList)
+    missingLabels apList = Set.toList ( allLabels `Set.difference` Set.fromList (map fst apList))
+    allLabels = Set.fromList $ concatMap (map fst)  (Map.elems labels)
 
 parseTransitionSystem :: Parser TransitionSystem
 parseTransitionSystem = do
@@ -145,7 +153,4 @@ parseTransitionSystem = do
   let ts = TransitionSystem initial states actions transitions (Map.fromList labelFunctions)
   case verifyTransitionSystem ts of
     (Just err) -> fail err
-    _ -> return ts
-
-
-  --fail "flo isn't happy"
+    _ -> return (fillEmptyAP ts)
