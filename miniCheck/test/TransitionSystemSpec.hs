@@ -25,9 +25,9 @@ spec = do
             trans select TRUE beer
             trans select TRUE soda
             labels select: select, -x
-            labels pay: pay
             labels soda: soda
             labels beer: beer
+            labels pay: pay
             |]
 
         let result = parse parseTransitionSystem "internal.txt" src
@@ -46,7 +46,6 @@ spec = do
 
             -- EXAMPLE-FIXME: Reinsert in the future
             -- trans soda get_soda pay
-            actions insert_coin, get_beer, get_soda
             trans soda get_soda pay
             trans beer get_beer pay
             trans pay insert_coin select
@@ -136,6 +135,19 @@ spec = do
             actions x 
             trans a doesNotExist a 
             labels a: a 
+            |]
+
+        let result = parse parseTransitionSystem "internal.txt" src
+        isLeft result `shouldBe` True
+
+    it "every state labels itself" $ do
+        let src = [r|
+            initial states a
+            states a, b 
+            actions x 
+            trans a TRUE a 
+            labels a: b 
+            labels b: b
             |]
 
         let result = parse parseTransitionSystem "internal.txt" src
