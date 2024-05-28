@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable, RecordWildCards #-}
 module Main where
 
 import System.IO
@@ -6,22 +6,43 @@ import TransitionSystem
 import ComputationalTreeLogic
 import ModelChecking
 import Text.Parsec (parse)
-import System.Environment (getArgs)
+import System.Environment (getArgs, withArgs)
 import Text.Printf (printf)
 import Data.Either (fromRight)
 import System.Exit (exitFailure, exitSuccess)
 import System.Console.CmdArgs
 import Data.Data (Data, Typeable)
 
+_PROGRAM_NAME = "miniCheck"
+_PROGRAM_VERSION = "1.0"
+_PROGRAM_INFO = _PROGRAM_NAME ++ " version " ++ _PROGRAM_VERSION
+_PROGRAM_ABOUT = "a simple command line tool for convenient model checking"
+_COPYRIGHT = "Johannes Blaha, Florian Freitag"
 
-data MiniCheckArgs = MiniCheckArgs {tsFilePath :: FilePath, ctlFilePath :: FilePath, ts :: Bool}  
-                    deriving (Show, Data, Typeable)
+data MiniCheckArgs = NormalMode {tsFilePath :: FilePath, ctlFilePath :: FilePath, ts :: Bool}  
+                    | ExtensionMode {extensions :: Bool}  
+                    deriving (Show, Data, Typeable, Eq)
 
-miniCheckArgs = MiniCheckArgs{ 
+normalMode :: MiniCheckArgs
+normalMode = NormalMode{ 
   tsFilePath = def &= argPos 0 &= typ "TS_FILE_PATH", 
   ctlFilePath = def &= argPos 1 &= typ "CTL_FILE_PATH",
   ts = def &= help "Set this flag to only check the input transition system for correctness" &= explicit &= name "ts"
-} &= summary "MiniCheck v0.1"
+}
+
+extensionMode :: MiniCheckArgs
+extensionMode = ExtensionMode{ 
+  extensions = def &= help "Set this flag to check the existing extensions" &= explicit &= name "extensions"
+}
+
+miniCheckModes :: Mode (CmdArgs MiniCheckArgs)
+miniCheckModes = cmdArgsMode $ modes [normalMode &= auto, extensionMode]
+    &= verbosityArgs [explicit, name "Verbose", name "V"] []
+    &= versionArg [explicit, name "version", name "v", summary _PROGRAM_INFO]
+    &= summary (_PROGRAM_INFO ++ ", " ++ _COPYRIGHT)
+    &= help _PROGRAM_ABOUT
+    &= helpArg [explicit, name "help", name "h"]
+    &= program _PROGRAM_NAME
 
 
 exitOnLeft :: Show a => Either a b -> IO b
@@ -33,12 +54,17 @@ exitOnLeft (Right result) = return result
   
 main :: IO ()
 main = do
-  -- parse arguments
-  args <- cmdArgs miniCheckArgs
-  let ts_path = tsFilePath args
-  let ctl_path = ctlFilePath args
-  let only_check_ts = ts args
-  --printf "Reading from path %s and %s %s\n" (ts_path) (ctl_path) (show only_check_ts)
+  mode <- cmdArgsRun miniCheckModes
+  case mode of
+        NormalMode { tsFilePath = path_ts, ctlFilePath = path_ctl , ts = tsFlag } ->
+            parseAndModelCheck path_ts path_ctl tsFlag
+        ExtensionMode { extensions = extFlag } ->
+            listExtensions extFlag
+
+
+parseAndModelCheck :: String -> String -> Bool -> IO ()
+parseAndModelCheck ts_path ctl_path only_check_ts = do
+  -- printf "Reading from path %s and %s %s\n" (ts_path) (ctl_path) (show only_check_ts)
   -- read and parse transition system file
   ts_file <- openFile ts_path ReadMode
   ts_contents <- hGetContents ts_file
@@ -58,3 +84,11 @@ main = do
     -- model checking
     let result = modelCheck ts ctl
     print result
+
+listExtensions :: Bool -> IO ()
+listExtensions flag = do
+  if flag then do
+    putStrLn "The implemented extensions are: "
+    exitSuccess
+  else do
+    putStrLn ""
