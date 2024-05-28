@@ -111,6 +111,11 @@ parseLabelFunction = do
   void (char '\n') <|> eof
   return (state, labels)
 
+verifyTransitionSystem :: TransitionSystem -> Maybe String
+verifyTransitionSystem ts
+  | not (initial_states ts `Set.isSubsetOf` states ts) = Just "not all initial states are valid states"
+  | otherwise = Nothing
+
 
 parseTransitionSystem :: Parser TransitionSystem
 parseTransitionSystem = do
@@ -125,4 +130,10 @@ parseTransitionSystem = do
   emptyLine
   labelFunctions <- many parseLabelFunction
   emptyLine
-  return (TransitionSystem initial states actions transitions (Map.fromList labelFunctions))
+  let ts = TransitionSystem initial states actions transitions (Map.fromList labelFunctions)
+  case verifyTransitionSystem ts of
+    (Just err) -> fail err
+    _ -> return ts
+    
+
+  --fail "flo isn't happy"

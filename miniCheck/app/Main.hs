@@ -12,7 +12,8 @@ import System.Exit (exitFailure)
 
 exitOnLeft :: Show a => Either a b -> IO b
 exitOnLeft (Left err) = do
-  print (show err)
+  print "ERROR:"
+  print err
   exitFailure
 exitOnLeft (Right result) = return result
   

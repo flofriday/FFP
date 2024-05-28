@@ -17,14 +17,17 @@ spec = do
     it "correct input" $ do
         let src = [r|
             initial states pay
-            states select, soda, beer
+            states select, soda, beer, pay
             actions insert_coin, get_beer, get_soda
             trans soda get_soda pay
             trans beer get_beer pay
             trans pay insert_coin select
             trans select TRUE beer
             trans select TRUE soda
-            labels select: -x, y, -z, -a, b
+            labels select: select, -x
+            labels pay: pay
+            labels soda: soda
+            labels beer: beer
             |]
 
         let result = parse parseTransitionSystem "internal.txt" src
@@ -38,16 +41,21 @@ spec = do
         let src = [r|
             --  Just an example
             initial states pay
-            states select, soda, beer
+            states select, soda, beer, pay
             actions insert_coin, get_beer, get_soda
 
             -- EXAMPLE-FIXME: Reinsert in the future
             -- trans soda get_soda pay
+            actions insert_coin, get_beer, get_soda
+            trans soda get_soda pay
             trans beer get_beer pay
             trans pay insert_coin select
-            trans select TRUE beer      -- Also trailing
+            trans select TRUE beer
             trans select TRUE soda
-            labels select: -x, y, -z, -a, b
+            labels select: select, -x
+            labels pay: pay
+            labels soda: soda
+            labels beer: beer
             |]
 
         let result = parse parseTransitionSystem "internal.txt" src
@@ -85,3 +93,14 @@ spec = do
         let result = parse parseTransitionSystem "internal.txt" src
         isRight result `shouldBe` True
  
+    it "initial states exists" $ do
+        let src = [r|
+            initial states notARealState
+            states a 
+            actions x 
+            trans a TRUE a 
+            labels a: a 
+            |]
+
+        let result = parse parseTransitionSystem "internal.txt" src
+        isLeft result `shouldBe` True
