@@ -13,16 +13,22 @@ import System.Exit (exitFailure, exitSuccess)
 import System.Console.CmdArgs
 import Data.Data (Data, Typeable)
 
+-- | Name of the program
 _PROGRAM_NAME = "miniCheck"
+-- | Version of the program
 _PROGRAM_VERSION = "1.0"
+-- | Program info consisting of the name and the version
 _PROGRAM_INFO = _PROGRAM_NAME ++ " version " ++ _PROGRAM_VERSION
+-- | A short description of the program
 _PROGRAM_ABOUT = "a simple command line tool for convenient model checking"
-_COPYRIGHT = "Johannes Blaha, Florian Freitag"
+-- | Authors of the program
+_AUTHORS = "Johannes Blaha, Florian Freitag"
 
 data MiniCheckArgs = NormalMode {tsFilePath :: FilePath, ctlFilePath :: FilePath, ts :: Bool}  
                     | ExtensionMode {extensions :: Bool}  
                     deriving (Show, Data, Typeable, Eq)
 
+-- | Defines the arguments for the normal mode. This mode is also used it no mode is specified
 normalMode :: MiniCheckArgs
 normalMode = NormalMode{ 
   tsFilePath = def &= argPos 0 &= typ "TS_FILE_PATH", 
@@ -30,21 +36,25 @@ normalMode = NormalMode{
   ts = def &= help "Set this flag to only check the input transition system for correctness" &= explicit &= name "ts"
 }
 
+-- | Defines the arguments for the extension mode.
 extensionMode :: MiniCheckArgs
 extensionMode = ExtensionMode{ 
   extensions = def &= help "Set this flag to check the existing extensions" &= explicit &= name "extensions"
 }
 
+-- | Defines the arguments that can be used with miniCheck
 miniCheckModes :: Mode (CmdArgs MiniCheckArgs)
 miniCheckModes = cmdArgsMode $ modes [normalMode &= auto, extensionMode]
     &= verbosityArgs [explicit, name "Verbose", name "V"] []
     &= versionArg [explicit, name "version", name "v", summary _PROGRAM_INFO]
-    &= summary (_PROGRAM_INFO ++ ", " ++ _COPYRIGHT)
+    &= summary (_PROGRAM_INFO ++ ", " ++ _AUTHORS)
     &= help _PROGRAM_ABOUT
     &= helpArg [explicit, name "help", name "h"]
     &= program _PROGRAM_NAME
 
-
+{- | Exits with an error when the provided argument (Either type) is left
+ otherwise returns the value from Right
+-}
 exitOnLeft :: Show a => Either a b -> IO b
 exitOnLeft (Left err) = do
   print "ERROR:"
@@ -61,7 +71,8 @@ main = do
         ExtensionMode { extensions = extFlag } ->
             listExtensions extFlag
 
-
+{- | This is executed when the program is started in the default mode
+-}
 parseAndModelCheck :: String -> String -> Bool -> IO ()
 parseAndModelCheck ts_path ctl_path only_check_ts = do
   -- printf "Reading from path %s and %s %s\n" (ts_path) (ctl_path) (show only_check_ts)
@@ -85,6 +96,8 @@ parseAndModelCheck ts_path ctl_path only_check_ts = do
     let result = modelCheck ts ctl
     print result
 
+{- | This is executed when the program is started in the extension mode
+-}
 listExtensions :: Bool -> IO ()
 listExtensions flag = do
   if flag then do

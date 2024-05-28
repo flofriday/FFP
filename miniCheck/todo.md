@@ -11,3 +11,7 @@
   - at least one initial state
 
 ## Optional
+
+- Fix different modes of cli argument parsing, i.e. "extension mode" should just be usable with
+  - `cabal run miniCheck -- --extensions` instead of
+  - `cabal run miniCheck -- extensionmode --extensions`
