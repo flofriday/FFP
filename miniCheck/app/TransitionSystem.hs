@@ -115,9 +115,11 @@ verifyTransitionSystem :: TransitionSystem -> Maybe String
 verifyTransitionSystem ts
   | not (initial_states ts `Set.isSubsetOf` states ts) = Just "not all initial states are valid states"
   | not (transStates `Set.isSubsetOf` states ts) = Just "not all transition states are valid states"
+  | not (transActions `Set.isSubsetOf` actions ts) = Just "not all transition actions are valid actions"
   | otherwise = Nothing
   where
     transStates = Set.fromList $ concatMap (\(s1, _, s2) -> [s1, s2]) (transition ts)
+    transActions = Set.fromList $ filter (\x -> x /= "TRUE") (map (\(_, a, _) -> a) (transition ts))
 
 
 parseTransitionSystem :: Parser TransitionSystem

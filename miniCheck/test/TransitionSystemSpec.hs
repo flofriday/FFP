@@ -105,7 +105,7 @@ spec = do
         let result = parse parseTransitionSystem "internal.txt" src
         isLeft result `shouldBe` True
 
-    it "right transition states exists" $ do
+    it "left transition states exists" $ do
         let src = [r|
             initial states a
             states a
@@ -123,6 +123,18 @@ spec = do
             states a 
             actions x 
             trans a TRUE doesNotExist 
+            labels a: a 
+            |]
+
+        let result = parse parseTransitionSystem "internal.txt" src
+        isLeft result `shouldBe` True
+
+    it "transition action exists" $ do
+        let src = [r|
+            initial states a
+            states a
+            actions x 
+            trans a doesNotExist a 
             labels a: a 
             |]
 
