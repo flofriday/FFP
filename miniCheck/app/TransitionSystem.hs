@@ -131,10 +131,11 @@ parseTransitionSystem = do
   emptyLine
   actions <- parseActions
   emptyLine
-  transitions <- many parseTransition
+  transitions <- many (parseTransition <* emptyLine)
   emptyLine
-  labelFunctions <- many parseLabelFunction
+  labelFunctions <- many (parseLabelFunction <* emptyLine)
   emptyLine
+  eof
   let ts = TransitionSystem initial states actions transitions (Map.fromList labelFunctions)
   case verifyTransitionSystem ts of
     (Just err) -> fail err
