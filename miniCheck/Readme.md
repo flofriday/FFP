@@ -14,7 +14,8 @@ other examples
 
 ```
 cabal run miniCheck -- "./app/transition_system.txt" "./app/computation_tree_logic.txt" --ts
-cabal run miniCheck --help
+cabal run miniCheck -- --help
+cabal run miniCheck -- extensionmode --extensions
 ```
 
 ## Run all tests
@@ -22,6 +23,14 @@ cabal run miniCheck --help
 ```
 cabal update
 cabal test --test-show-details=direct
+```
+
+## Generate Documentation
+
+Run
+
+```
+cabal haddock --haddock-executables
 ```
 
 ## Transition Systems (TS)
