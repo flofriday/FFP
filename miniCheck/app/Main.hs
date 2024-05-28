@@ -7,7 +7,15 @@ import ModelChecking
 import Text.Parsec (parse)
 import System.Environment (getArgs)
 import Text.Printf (printf)
+import Data.Either (fromRight)
+import System.Exit (exitFailure)
 
+exitOnLeft :: Show a => Either a b -> IO b
+exitOnLeft (Left err) = do
+  print (show err)
+  exitFailure
+exitOnLeft (Right result) = return result
+  
 main :: IO ()
 main = do
   -- parse arguments
@@ -18,18 +26,18 @@ main = do
   -- read and parse transition system file
   ts_file <- openFile ts_path ReadMode
   ts_contents <- hGetContents ts_file
-  let ts = parse parseTransitionSystem ts_path ts_contents
+  ts <- exitOnLeft $ parse parseTransitionSystem ts_path ts_contents
   print ts
   hClose ts_file
   -- read and parse ctl file
   ctl_file <- openFile ctl_path ReadMode
   ctl_contents <- hGetContents ctl_file
-  let ctl = parse parseComputationalTreeLogic ctl_path ctl_contents
+  ctl <- exitOnLeft $ parse parseComputationalTreeLogic ctl_path ctl_contents
   print ctl
   hClose ctl_file
   -- model checking
-  -- result <- modelCheck ts ctl
-  -- print result
+  let result = modelCheck ts ctl
+  print result
 
 
 checkArgs :: [String] -> IO ()

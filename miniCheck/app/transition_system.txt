@@ -1,12 +1,13 @@
 initial states pay
-states select, soda, beer
+states select, soda, beer, pay
 actions insert_coin, get_beer, get_soda
 trans soda get_soda pay
 trans beer get_beer pay
 trans pay insert_coin select
 trans select TRUE beer
 trans select TRUE soda
-labels select: select, -soda, -beer
-labels soda: -select, soda, -beer
-labels beer: -select, -soda, beer
-
+-- FIXME: only the first is parsed
+labels select: select, -soda, -beer, -pay
+labels soda: -select, soda, -beer, -pay
+labels beer: -select, -soda, beer, -pay
+labels pay: -select, -soda, -beer, pay

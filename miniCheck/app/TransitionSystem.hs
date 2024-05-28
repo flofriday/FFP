@@ -10,6 +10,7 @@ import qualified Data.Set as Set
 import Text.Parsec (ParseError, Parsec)
 import Text.Parsec hiding ((<|>), State)
 import Text.Parsec.String (Parser)
+import Text.Parsec.Combinator
 import Control.Monad (void)
 {- ORMOLU_ENABLE -}
 
@@ -102,6 +103,7 @@ parseLabelFunction = do
   char ':'
   whitespace
   labels <- parseAP `sepBy` (whitespace >> char ',' >> whitespace)
+  void (char '\n') <|> eof
   return (state, labels)
 
 
