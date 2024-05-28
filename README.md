@@ -25,7 +25,12 @@ To enable time tracking inside ghci, you can use `:set +s`.
 
 In order to run assignment 3, the library QuickCheck is needed. You can install it with:
 
-```
+```bash
 cabal update
 cabal install --lib QuickCheck
 ```
+
+## Project
+
+The last assignment was the miniCheck project and since it is quite large it 
+has it's own subdirectory with it's own README.

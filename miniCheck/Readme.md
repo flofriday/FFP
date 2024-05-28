@@ -1,8 +1,8 @@
 # MiniCheck
 
-## Run
+## Build and Run
 
-```
+```bash
 cabal update
 cabal run miniCheck -- "./app/transition_system.txt" "./app/computation_tree_logic.txt"
 ```
@@ -12,7 +12,7 @@ positional argument 2: the path for the computational tree logic file
 
 other examples
 
-```
+```bash
 cabal run miniCheck -- "./app/transition_system.txt" "./app/computation_tree_logic.txt" --ts
 cabal run miniCheck -- --help
 cabal run miniCheck -- extensionmode --extensions
@@ -20,7 +20,7 @@ cabal run miniCheck -- extensionmode --extensions
 
 ## Run all tests
 
-```
+```bash
 cabal update
 cabal test --test-show-details=direct
 ```
@@ -29,7 +29,7 @@ cabal test --test-show-details=direct
 
 Run
 
-```
+```bash
 cabal haddock --haddock-executables
 ```
 
@@ -44,7 +44,7 @@ Formally, a TS is a tuple $(S, Act, \to, I, AP, L)$, where
 - $AP$ is a set of _atomic propositions_
 - $L : S \to 2^{AP}$ is a labelling function.
 
-### Text Representation
+### Textual Representation
 
 ![TS example image](ts_example.png)
 
