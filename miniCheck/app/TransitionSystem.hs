@@ -54,7 +54,8 @@ parseInitial :: Parser (Set State)
 parseInitial = do
   string "initial states"
   whitespace
-  identifiers <- identifier `sepBy` (whitespace >> char ',' >> whitespace)
+  identifiers <- identifier `sepBy` try (whitespace >> char ',' >> whitespace)
+  whitespace
   char '\n'
   return (Set.fromList identifiers)
 
@@ -62,7 +63,8 @@ parseStates :: Parser (Set State)
 parseStates = do
   string "states"
   whitespace
-  identifiers <- identifier `sepBy` (whitespace >> char ',' >> whitespace)
+  identifiers <- identifier `sepBy` try (whitespace >> char ',' >> whitespace)
+  whitespace
   char '\n'
   return (Set.fromList identifiers)
 
@@ -70,7 +72,8 @@ parseActions :: Parser (Set Action)
 parseActions = do
   string "actions"
   whitespace
-  identifiers <- identifier `sepBy` (whitespace >> char ',' >> whitespace)
+  identifiers <- identifier `sepBy` try (whitespace >> char ',' >> whitespace)
+  whitespace
   char '\n'
   return (Set.fromList identifiers)
 
@@ -83,6 +86,7 @@ parseTransition = do
   action <- identifier
   whitespace
   end_state <- identifier
+  whitespace
   char '\n'
   return (start_state, action, end_state)
 
@@ -102,7 +106,8 @@ parseLabelFunction = do
   state <- identifier
   char ':'
   whitespace
-  labels <- parseAP `sepBy` (whitespace >> char ',' >> whitespace)
+  labels <- parseAP `sepBy` try (whitespace >> char ',' >> whitespace)
+  whitespace
   void (char '\n') <|> eof
   return (state, labels)
 

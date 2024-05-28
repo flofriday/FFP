@@ -10,7 +10,7 @@ cabal run miniCheck "./app/transition_system.txt" "./app/computation_tree_logic.
 ## Run all tests
 ```
 cabal update
-cabal test --test-show-details=direct --test-option=--format=progress
+cabal test --test-show-details=direct
 ```
 
 ## Transition Systems (TS)

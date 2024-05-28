@@ -73,3 +73,15 @@ spec = do
         let result = parse parseTransitionSystem "internal.txt" src
         isLeft result `shouldBe` True
      
+    it "trailing whitespaces" $ do
+        let src = [r|
+            initial states a 
+            states a 
+            actions x 
+            trans a TRUE a 
+            labels a: a 
+            |]
+
+        let result = parse parseTransitionSystem "internal.txt" src
+        isRight result `shouldBe` True
+ 
