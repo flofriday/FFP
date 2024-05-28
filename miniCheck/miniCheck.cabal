@@ -70,7 +70,8 @@ executable miniCheck
                       parsec >= 3.1.17.0,
                       mtl >= 2.3.1,
                       containers >= 0.7,
-                      raw-strings-qq >= 1.1
+                      raw-strings-qq >= 1.1,
+                      cmdargs >= 0.10.22
 
     -- Directories containing source files.
     hs-source-dirs:   app

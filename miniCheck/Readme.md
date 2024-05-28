@@ -4,10 +4,21 @@
 
 ```
 cabal update
-cabal run miniCheck "./app/transition_system.txt" "./app/computation_tree_logic.txt"
+cabal run miniCheck -- "./app/transition_system.txt" "./app/computation_tree_logic.txt"
+```
+
+positional argument 1: the path for the transition system file
+positional argument 2: the path for the computational tree logic file
+
+other examples
+
+```
+cabal run miniCheck -- "./app/transition_system.txt" "./app/computation_tree_logic.txt" --ts
+cabal run miniCheck --help
 ```
 
 ## Run all tests
+
 ```
 cabal update
 cabal test --test-show-details=direct
@@ -70,20 +81,20 @@ labels select: -x, y, -z, -a, b
 ctl_system        = ctl_formula | ctl_formula newline ctl_system;
 ctl_formula       = state_formula | path_formula;
 
-state_formula     = "AP" identifier 
-                  | "NOT" "(" state_formula ")" 
-                  | "AND" "(" state_formula ")" "(" state_formula ")" 
-                  | "OR" "(" state_formula ")" "(" state_formula ")" 
-                  | "IMPLIES" "(" state_formula ")" "(" state_formula ")" 
-                  | "EQUIVALENT" "(" state_formula ")" "(" state_formula ")" 
-                  | "XOR" "(" state_formula ")" "(" state_formula ")" 
-                  | "EXISTS" "(" path_formula ")" 
+state_formula     = "AP" identifier
+                  | "NOT" "(" state_formula ")"
+                  | "AND" "(" state_formula ")" "(" state_formula ")"
+                  | "OR" "(" state_formula ")" "(" state_formula ")"
+                  | "IMPLIES" "(" state_formula ")" "(" state_formula ")"
+                  | "EQUIVALENT" "(" state_formula ")" "(" state_formula ")"
+                  | "XOR" "(" state_formula ")" "(" state_formula ")"
+                  | "EXISTS" "(" path_formula ")"
                   | "FORALL" "(" path_formula ")"
                   ;
-                  
-path_formula      = "O" "(" state_formula ")" 
-                  | "U" "(" state_formula ")" "(" state_formula ")" 
-                  | "E" "(" state_formula ")" 
+
+path_formula      = "O" "(" state_formula ")"
+                  | "U" "(" state_formula ")" "(" state_formula ")"
+                  | "E" "(" state_formula ")"
                   | "A" "(" state_formula ")"
                   ;
 
