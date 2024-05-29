@@ -26,7 +26,7 @@ _PROGRAM_ABOUT = "a simple command line tool for convenient model checking"
 _AUTHORS = "Johannes Blaha, Florian Freitag"
 
 data MiniCheckArgs = NormalMode {tsFilePath :: FilePath, ctlFilePath :: FilePath, ts :: Bool}  
-                    | MiniMMMode {minimmFilePath :: FilePath, ctlFilePath2 :: FilePath}
+                    | MiniMMMode {minimmFilePath :: FilePath, ctlFilePath :: FilePath}
                     | ExtensionMode {extensions :: Bool}  
                     deriving (Show, Data, Typeable, Eq)
 
@@ -41,8 +41,8 @@ normalMode = NormalMode{
 -- | Defines the arguments for the Mini-- mode. 
 minimmMode :: MiniCheckArgs
 minimmMode = MiniMMMode{ 
-  minimmFilePath = def &= argPos 0 &= typ "MINIMM_FILE_PATH", 
-  ctlFilePath2 = def &= argPos 1 &= typ "CTL_FILE_PATH"
+  minimmFilePath = def &= argPos 2 &= typ "MINIMM_FILE_PATH", 
+  ctlFilePath = def &= argPos 3 &= typ "CTL_FILE_PATH"
 }
 
 -- | Defines the arguments for the extension mode.
@@ -77,7 +77,7 @@ main = do
   case mode of
         NormalMode { tsFilePath = path_ts, ctlFilePath = path_ctl , ts = tsFlag } ->
             parseAndModelCheck path_ts path_ctl tsFlag
-        MiniMMMode { minimmFilePath = path_mini, ctlFilePath2 = path_ctl} ->
+        MiniMMMode { minimmFilePath = path_mini, ctlFilePath = path_ctl} ->
             parseMiniMMAndCheck path_mini path_ctl
         ExtensionMode { extensions = extFlag } ->
             listExtensions extFlag
