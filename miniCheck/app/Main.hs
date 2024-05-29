@@ -4,6 +4,7 @@ module Main where
 import System.IO
 import TransitionSystem
 import ComputationalTreeLogic
+import MiniMM
 import ModelChecking
 import Text.Parsec (parse)
 import System.Environment (getArgs, withArgs)
@@ -25,6 +26,7 @@ _PROGRAM_ABOUT = "a simple command line tool for convenient model checking"
 _AUTHORS = "Johannes Blaha, Florian Freitag"
 
 data MiniCheckArgs = NormalMode {tsFilePath :: FilePath, ctlFilePath :: FilePath, ts :: Bool}  
+                    | MiniMMMode {minimmFilePath :: FilePath, ctlFilePath2 :: FilePath}
                     | ExtensionMode {extensions :: Bool}  
                     deriving (Show, Data, Typeable, Eq)
 
@@ -36,6 +38,13 @@ normalMode = NormalMode{
   ts = def &= help "Set this flag to only check the input transition system for correctness" &= explicit &= name "ts"
 }
 
+-- | Defines the arguments for the Mini-- mode. 
+minimmMode :: MiniCheckArgs
+minimmMode = MiniMMMode{ 
+  minimmFilePath = def &= argPos 0 &= typ "MINIMM_FILE_PATH", 
+  ctlFilePath2 = def &= argPos 1 &= typ "CTL_FILE_PATH"
+}
+
 -- | Defines the arguments for the extension mode.
 extensionMode :: MiniCheckArgs
 extensionMode = ExtensionMode{ 
@@ -44,7 +53,7 @@ extensionMode = ExtensionMode{
 
 -- | Defines the arguments that can be used with miniCheck
 miniCheckModes :: Mode (CmdArgs MiniCheckArgs)
-miniCheckModes = cmdArgsMode $ modes [normalMode &= auto, extensionMode]
+miniCheckModes = cmdArgsMode $ modes [normalMode &= auto, minimmMode, extensionMode]
     &= verbosityArgs [explicit, name "Verbose", name "V"] []
     &= versionArg [explicit, name "version", name "v", summary _PROGRAM_INFO]
     &= summary (_PROGRAM_INFO ++ ", " ++ _AUTHORS)
@@ -68,6 +77,8 @@ main = do
   case mode of
         NormalMode { tsFilePath = path_ts, ctlFilePath = path_ctl , ts = tsFlag } ->
             parseAndModelCheck path_ts path_ctl tsFlag
+        MiniMMMode { minimmFilePath = path_mini, ctlFilePath2 = path_ctl} ->
+            parseMiniMMAndCheck path_mini path_ctl
         ExtensionMode { extensions = extFlag } ->
             listExtensions extFlag
 
@@ -80,7 +91,7 @@ parseAndModelCheck ts_path ctl_path only_check_ts = do
   ts_file <- openFile ts_path ReadMode
   ts_contents <- hGetContents ts_file
   ts <- exitOnLeft $ parse parseTransitionSystem ts_path ts_contents
-  print ts
+  --print ts
   hClose ts_file
   if only_check_ts then do
     putStrLn "\n************* \n--ts mode was enabled. Therefore we are only checking the transition system. Exiting...\n*************\n"
@@ -90,11 +101,20 @@ parseAndModelCheck ts_path ctl_path only_check_ts = do
     ctl_file <- openFile ctl_path ReadMode
     ctl_contents <- hGetContents ctl_file
     ctl <- exitOnLeft $ parse parseComputationalTreeLogic ctl_path ctl_contents
-    print ctl
+    --print ctl
     hClose ctl_file
     -- model checking
     let result = modelCheck ts ctl
     print result
+
+-- | This is executed if the first extension Mini-- is invoked.
+parseMiniMMAndCheck :: String -> String -> IO ()
+parseMiniMMAndCheck mini_path ctl_path = do
+  mini_file <- openFile mini_path ReadMode
+  mini_contents <- hGetContents mini_file
+  mini <- exitOnLeft $ parse parseMiniMM mini_path mini_contents
+  print mini
+
 
 {- | This is executed when the program is started in the extension mode
 -}
@@ -102,6 +122,7 @@ listExtensions :: Bool -> IO ()
 listExtensions flag = do
   if flag then do
     putStrLn "The implemented extensions are: "
+    putStrLn "\t Extension 1: Mini--"
     exitSuccess
   else do
     putStrLn ""
