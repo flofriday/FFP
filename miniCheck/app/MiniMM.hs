@@ -7,7 +7,7 @@ import Control.Monad (void)
 
 type Identifier = String
 
-data Operator = And | Or | Implies | Equal | XOR deriving (Show, Eq)
+data Operator = And | Or | Implies | Equal | Xor deriving (Show, Eq)
 
 data Expression = Not Expression
                 | Binary Expression Operator Expression
@@ -17,7 +17,7 @@ data Expression = Not Expression
                 deriving (Show, Eq)
 
 
-data Statement  = If [Statement] (Maybe [Statement])
+data Statement  = If Expression [Statement] (Maybe [Statement])
                 | Assign Identifier Expression
                 | Print Expression
                 | Read Identifier
@@ -62,12 +62,153 @@ parseHeader = do
     char '{'
     return args
 
--- | Parses a single statement
-{-
-parseStatement :: parser Statement
+parseVar :: Parser Expression
+parseVar = do
+    name <- parseIdentifier
+    return (Var name)
+
+parseBool :: Parser Expression
+parseBool = do
+    (MiniMM.True <$ string "true") <|> ( MiniMM.False <$ string "false")
+
+parseNot :: Parser Expression
+parseNot = do
+    char '!'
+    expr <- parseNestedExpression
+    return (Not expr)
+
+parseGroup :: Parser Expression
+parseGroup = do
+    char '('
+    whitespace
+    expr <- parseExpression
+    whitespace
+    char ')'
+    return expr
+
+
+parseNestedExpression :: Parser Expression
+parseNestedExpression = do
+    parseBool
+    <|> parseVar
+    <|> parseGroup
+
+parseRelator :: Parser Operator
+parseRelator = do
+    And <$ char '&'
+    <|> (Or <$ char '|')
+    <|> (Xor <$ char '^')
+    <|> (Implies <$ string "=>")
+    <|> (Equal <$ string "<=>")
+
+parseBinary :: Parser Expression
+parseBinary = do
+    left <- parseNestedExpression
+    whitespace
+    op <- parseRelator
+    whitespace
+    right <- parseNestedExpression
+    return (Binary left op right)
+
+parseExpression :: Parser Expression
+parseExpression = do
+    (try parseBinary)
+    <|> parseNot
+    <|> parseNestedExpression
+
+parseAssign :: Parser Statement
+parseAssign = do
+    dst <- parseIdentifier
+    whitespace
+    char '='
+    whitespace
+    expr <- parseExpression
+    whitespace
+    char ';'
+    whitespace
+    return (Assign dst expr)
+
+parseElse :: Parser [Statement]
+parseElse = do
+    string "else"
+    whitespace
+    char '{'
+    whitespace
+    statements <- many parseStatement
+    whitespace
+    char '}'
+    whitespace
+    return statements
+
+parseIf :: Parser Statement
+parseIf = do
+    string "if"
+    whitespace
+    char '('
+    whitespace
+    cond <- parseExpression
+    whitespace
+    char ')'
+    whitespace
+    char '{'
+    whitespace
+    statements <- many parseStatement
+    whitespace
+    char '}'
+    whitespace
+
+    -- FIXME: Add else branch
+    elseStatements <- optionMaybe parseElse
+
+    return (If cond statements elseStatements)
+
+
+parsePrint :: Parser Statement
+parsePrint = do
+    string "print_bool"
+    whitespace
+    char '('
+    whitespace
+    expr <- parseExpression
+    whitespace
+    char ')'
+    whitespace
+    char ';'
+    whitespace
+    return (Print expr)
+
+parseRead :: Parser Statement
+parseRead = do
+    dst <- parseIdentifier
+    whitespace
+    char '='
+    whitespace
+    string "read_bool"
+    whitespace
+    char '('
+    whitespace
+    char ')'
+    whitespace
+    char ';'
+    return (Read dst)
+
+-- | Parses a single statement, all except the return
+parseStatement :: Parser Statement
 parseStatement = do
-    return (Read "flo")
--}
+    parsePrint
+    <|> (try parseRead)
+    <|> (try parseAssign)
+    <|> parseIf
+    
+parseReturn :: Parser Statement
+parseReturn = do
+    string "return"
+    whitespace
+    var <- parseIdentifier
+    whitespace
+    char ';'
+    whitespace
+    return (Return var)
 
 -- | Parses a Mini-- input program into an AST.
 parseMiniMM :: Parser Program
@@ -75,10 +216,11 @@ parseMiniMM = do
     whitespace
     args <- parseHeader
     whitespace
-    --statements <- many parseStatement
-    --whitespace
-    let statements = []
+    statements <- many (try parseStatement)
+    whitespace
+    returnStmt <- parseReturn
+    whitespace
     char '}'
     whitespace
     eof
-    return (Program args statements)
+    return (Program args (statements ++ [returnStmt]))

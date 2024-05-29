@@ -60,7 +60,9 @@ executable miniCheck
     -- Modules included in this executable, other than Main.
     other-modules: TransitionSystem,
                     ComputationalTreeLogic,
-                    ModelChecking
+                    ModelChecking,
+                    MiniMM
+
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
