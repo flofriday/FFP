@@ -145,4 +145,15 @@ spec = do
         let ast = fromRight (error "Expected Right but got Left") $ parse parseMiniMM "internal.txt" src
         isRight (compileMiniMM ast) `shouldBe` True
 
+    it "assignmentExample" $ do
+        let src = [r|
+           procedure main(a, b) {
+                if (a) { c = !(b); 
+                } else { c = b; } 
+                d = c ^ true;
+                return d;
+            } 
+        |]
+        let ast = fromRight (error "Expected Right but got Left") $ parse parseMiniMM "internal.txt" src
+        isRight (compileMiniMM ast) `shouldBe` True
     
