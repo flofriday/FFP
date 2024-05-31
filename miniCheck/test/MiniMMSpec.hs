@@ -114,7 +114,7 @@ spec = do
     it "print equal" $ do
         let src = [r|
             procedure main(a, b) {
-                print_bool(a <=> b);
+                print_bool(a == b);
                 return a;
             }
         |]

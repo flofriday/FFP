@@ -98,8 +98,8 @@ parseRelator = do
     And <$ char '&'
     <|> (Or <$ char '|')
     <|> (Xor <$ char '^')
-    <|> (Implies <$ string "=>")
-    <|> (Equal <$ string "<=>")
+    <|> try (Implies <$ string "=>")
+    <|> (Equal <$ string "==")
 
 parseBinary :: Parser Expression
 parseBinary = do

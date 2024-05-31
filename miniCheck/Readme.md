@@ -122,3 +122,18 @@ Example:
 ```
 FORALL (U (AND (AP ap1) (NOT (AP ap2))) (OR (AP ap3) (EXISTS (A (AP ap4)))))
 ```
+
+## Mini-- (Extension 1)
+
+The grammar is still the same from the assingment, however we replaced the 
+mathematical operators with the more common C-like operators:
+
+```
+& for ∧ (binary and)
+| for ∨ (binary or)
+^ for ⊕ (binary xor)
+=> for ⟹ (implies, doesn't exist in C so it's new)
+== for ⟺ (equality)
+```
+
+Also for convenience it implements C-like line comments.
