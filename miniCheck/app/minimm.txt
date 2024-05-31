@@ -1,9 +1,11 @@
 // Yes some symbols are different here cause we switched them as
 // they are way easier to type.
 // Also in the assignment there are no comments.
-procedure main(a, b) {
-    if (a) { c = !(b); 
-    } else { c = b; } 
-    d = c ^ true;
-    return d;
+procedure main(a) {
+    if (a) {
+        x = true;
+    } else {
+        x = true;
+    }
+    return x;
 }

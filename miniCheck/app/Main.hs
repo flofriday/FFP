@@ -5,6 +5,7 @@ import System.IO
 import TransitionSystem
 import ComputationalTreeLogic
 import MiniMM
+import MiniMMCompiler
 import ModelChecking
 import Text.Parsec (parse)
 import System.Environment (getArgs, withArgs)
@@ -110,10 +111,27 @@ parseAndModelCheck ts_path ctl_path only_check_ts = do
 -- | This is executed if the first extension Mini-- is invoked.
 parseMiniMMAndCheck :: String -> String -> IO ()
 parseMiniMMAndCheck mini_path ctl_path = do
+  -- Parse and compile the minimm program
   mini_file <- openFile mini_path ReadMode
   mini_contents <- hGetContents mini_file
   mini <- exitOnLeft $ parse parseMiniMM mini_path mini_contents
-  print mini
+  ts <- exitOnLeft $ compileMiniMM mini
+  print ts
+
+  -- Parse the ctl
+  ctl_file <- openFile ctl_path ReadMode
+  ctl_contents <- hGetContents ctl_file
+  ctl <- exitOnLeft $ parse parseComputationalTreeLogic ctl_path ctl_contents 
+
+  -- Check it
+  let result = modelCheck ts ctl
+  print result
+  hClose mini_file
+  hClose ctl_file
+
+
+
+
 
 
 {- | This is executed when the program is started in the extension mode

@@ -121,6 +121,27 @@ spec = do
         let result = parse parseMiniMM "internal.txt" src
         isRight result `shouldBe` True
 
+    it "print false" $ do
+        let src = [r|
+            procedure main(a, b) {
+                print_bool(false);
+                return a;
+            }
+        |]
+        let result = parse parseMiniMM "internal.txt" src
+        isRight result `shouldBe` True
+
+    it "print true" $ do
+        let src = [r|
+            procedure main(a, b) {
+                print_bool(true);
+                return a;
+            }
+        |]
+        let result = parse parseMiniMM "internal.txt" src
+        isRight result `shouldBe` True
+
+
 
     it "read" $ do
         let src = [r|

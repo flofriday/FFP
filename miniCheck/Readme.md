@@ -16,7 +16,7 @@ other examples
 cabal run miniCheck -- "./app/transition_system.txt" "./app/computation_tree_logic.txt" --ts
 cabal run miniCheck -- --help
 cabal run miniCheck -- extensionmode --extensions
-cabal run miniCheck -- minimmmode "app/minimm.txt" "app/computational_tree_logic.txt"
+cabal run miniCheck -- minimmmode "app/minimm.txt" "app/computation_tree_logic.txt"
 ```
 
 ## Run all tests
@@ -137,3 +137,4 @@ mathematical operators with the more common C-like operators:
 ```
 
 Also for convenience it implements C-like line comments.
+

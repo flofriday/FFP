@@ -61,7 +61,8 @@ executable miniCheck
     other-modules: TransitionSystem,
                     ComputationalTreeLogic,
                     ModelChecking,
-                    MiniMM
+                    MiniMM,
+                    MiniMMCompiler
 
 
     -- LANGUAGE extensions used by modules in this package.

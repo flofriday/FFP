@@ -1,4 +1,4 @@
-module MiniMM (parseMiniMM) where
+module MiniMM (parseMiniMM, MiniMM(..), Statement(..), Expression(..), Operator(..)) where
 
 import Text.Parsec (ParseError, Parsec)
 import Text.Parsec
@@ -12,8 +12,8 @@ data Operator = And | Or | Implies | Equal | Xor deriving (Show, Eq)
 data Expression = Not Expression
                 | Binary Expression Operator Expression
                 | Var Identifier
-                | True
-                | False
+                | TrueLiteral
+                | FalseLiteral
                 deriving (Show, Eq)
 
 
@@ -24,10 +24,11 @@ data Statement  = If Expression [Statement] (Maybe [Statement])
                 | Return Identifier
                 deriving (Show, Eq)
 
-data Program = Program
+data MiniMM = MiniMM
     {   arguments :: [Identifier],
         statements :: [Statement]
     } deriving (Show, Eq)
+
 
 
 -- | Comments in Mini-- are C-style and there are only single line comments not 
@@ -69,7 +70,7 @@ parseVar = do
 
 parseBool :: Parser Expression
 parseBool = do
-    (MiniMM.True <$ string "true") <|> ( MiniMM.False <$ string "false")
+    (MiniMM.TrueLiteral <$ string "true") <|> ( MiniMM.FalseLiteral <$ string "false")
 
 parseNot :: Parser Expression
 parseNot = do
@@ -211,7 +212,7 @@ parseReturn = do
     return (Return var)
 
 -- | Parses a Mini-- input program into an AST.
-parseMiniMM :: Parser Program
+parseMiniMM :: Parser MiniMM
 parseMiniMM = do
     whitespace
     args <- parseHeader
@@ -223,4 +224,4 @@ parseMiniMM = do
     char '}'
     whitespace
     eof
-    return (Program args (statements ++ [returnStmt]))
+    return (MiniMM args (statements ++ [returnStmt]))
