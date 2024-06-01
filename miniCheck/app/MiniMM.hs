@@ -7,8 +7,10 @@ import Control.Monad (void)
 
 type Identifier = String
 
+-- | The operators used for binary operations.
 data Operator = And | Or | Implies | Equal | Xor deriving (Show, Eq)
 
+-- | Expressions don't have sideeffects but always evaluate to a boolean.
 data Expression = Not Expression
                 | Binary Expression Operator Expression
                 | Var Identifier
@@ -17,7 +19,13 @@ data Expression = Not Expression
                 deriving (Show, Eq)
 
 
-data Statement  = If Expression [Statement] (Maybe [Statement])
+-- | Statements don't evaluate to anything but might have side effects.
+data Statement  = 
+                  -- | If statements with an optional else
+                  If                       
+                    Expression              -- ^ The condition of an if expression
+                    [Statement]             -- ^ The condition body
+                    (Maybe [Statement])     -- ^ The optional body of the else
                 | Assign Identifier Expression
                 | Print Expression
                 | Read Identifier
@@ -87,7 +95,6 @@ parseGroup = do
     char ')'
     return expr
 
-
 parseNestedExpression :: Parser Expression
 parseNestedExpression = do
     parseBool
@@ -129,6 +136,9 @@ parseAssign = do
     whitespace
     return (Assign dst expr)
 
+{- | This function is called after a if is parsed and will try to parse an 
+    following else block.
+-}
 parseElse :: Parser [Statement]
 parseElse = do
     string "else"
@@ -158,7 +168,6 @@ parseIf = do
     char '}'
     whitespace
 
-    -- FIXME: Add else branch
     elseStatements <- optionMaybe parseElse
 
     return (If cond statements elseStatements)

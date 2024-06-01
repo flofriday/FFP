@@ -1,5 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
-module MiniMMCompiler (compileMiniMM) where
+module MiniMMCompiler (compileMiniMM, CompileError) where
 import TransitionSystem (TransitionSystem (TransitionSystem), verifyTransitionSystem, fillEmptyAP)
 import MiniMM
 import qualified Data.Set as Set
@@ -12,6 +12,9 @@ type Var = (String, Bool)
 
 type CompileError = String
 
+{- |The state needed during compilation. Contains temporary information and the 
+    transition system which will be the result.
+-}
 data CompileState = CompileState {
     transitionSystem :: TransitionSystem,
     vars :: [Var],
@@ -19,6 +22,7 @@ data CompileState = CompileState {
 } deriving (Show, Eq)
 
 
+-- | Generates a list of possible permutations for a list of variable names
 variablePermutations :: [String] -> [[Var]]
 variablePermutations [] = [[]]
 variablePermutations [v] = [[(v, False)],  [(v, True)]]
@@ -26,6 +30,9 @@ variablePermutations (v:vs) = concatMap (\tail -> [(v, False) : tail, (v, True):
     where
         rest = variablePermutations vs
 
+{- | Updates the value of a variable if it doesn't exist yet and otherwise 
+    inserts it.
+-}
 setVariable :: String -> Bool -> [Var] -> [Var]
 setVariable name val [] = [(name, val)]
 setVariable name val ((vname, vval):rest)
@@ -60,6 +67,9 @@ insertNode name previousName (CompileState ts vars nodeCounter) = CompileState n
 countedName :: String -> CompileState -> String
 countedName name state = name ++ show (nodeCounter state)
 
+{- |Evaluates an expression to a bool. 
+    (All well formed Mini-- expressions can evaluate to bools)
+-}
 evalExpression :: Expression -> CompileState -> Either CompileError Bool
 evalExpression (Not inner) state = do
     val <- evalExpression inner state
@@ -83,6 +93,7 @@ evalExpression (Var var) state = case find (\(t, _ ) -> t == var) (vars state) o
 evalExpression TrueLiteral state = Right True
 evalExpression FalseLiteral state = Right False
 
+-- | Compiles a list of statements, however it doesn't add terminal states.
 compileStatements :: [Statement] -> String -> CompileState -> Either String CompileState
 compileStatements [] _ state = Right state
 
@@ -137,6 +148,7 @@ mainFolder statements oldState assignment  = case oldState of
     where
         mainName counter = ("main" ++ show counter)
 
+-- | Inserts a terminal state and all other leaf nodes in the transition system
 insertTerminalState :: TransitionSystem -> TransitionSystem
 insertTerminalState (TransitionSystem initial states actions transitions labelFunc) = (TransitionSystem initial (Set.insert "terminal" states) actions newTransitions newLabelFunc)
     where
@@ -147,6 +159,7 @@ insertTerminalState (TransitionSystem initial states actions transitions labelFu
         transSrcStates = Set.fromList $ map (\(s1, _, _) -> s1) transitions
         --transStates = Set.fromList $ concatMap (\(s1, _, s2) -> [s1, s2]) transitions 
 
+{- |Compiles a `MiniMM` ast into a `TransitionSystem`. -}
 compileMiniMM :: MiniMM -> Either CompileError TransitionSystem
 compileMiniMM (MiniMM args statements) = do
     state <- foldl (mainFolder statements) (Right emptyState) variableAssignments
