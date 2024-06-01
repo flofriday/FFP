@@ -95,15 +95,14 @@ compileStatements ((Assign dst expr):statements) previous state = do
 
 compileStatements ((If cond body elseBody):statements) previous state = do
     val <- evalExpression cond state
-    newState <- case (val, elseBody) of
-        (True, _) -> compileStatements body name insertedState
-        (False, Just realElseBody) -> compileStatements realElseBody name insertedState
-        _ -> Right insertedState
-    compileStatements statements name newState
+    let newStatements = case (val, elseBody) of
+            (True, _) -> body ++ statements
+            (False, Just realElseBody) ->  realElseBody ++ statements
+            _ -> statements
+    compileStatements newStatements name newState
     where
         name = countedName "if" state
-        insertedState =  insertNode name (Just previous) state
-
+        newState =  insertNode name (Just previous) state
 
 compileStatements ((Read dst):statements) previous state = do
     let newStateFalse = setVariableInState dst False newState

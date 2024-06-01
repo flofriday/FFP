@@ -10,6 +10,14 @@ import Text.Parsec (parse)
 import Data.Either (isRight, isLeft, fromRight)
 import qualified Data.Either as Either
 import MiniMMCompiler (compileMiniMM)
+import TransitionSystem
+
+nodeCount :: TransitionSystem -> Int
+nodeCount ts = length $ states ts
+
+transCount :: TransitionSystem -> Int
+transCount ts = length $ transition ts
+
 
 spec :: Spec
 spec = do
@@ -156,4 +164,45 @@ spec = do
         |]
         let ast = fromRight (error "Expected Right but got Left") $ parse parseMiniMM "internal.txt" src
         isRight (compileMiniMM ast) `shouldBe` True
+    
+
+  describe "compile and verify nodes" $ do
+    it "minimal" $ do
+        let src = [r|
+           procedure main(a) {
+                return a;
+            } 
+        |]
+        let ast = fromRight (error "Expected Right but got Left") $ parse parseMiniMM "internal.txt" src
+        let ts = fromRight (error "Expected Right but got Left") (compileMiniMM ast)  
+        nodeCount ts `shouldBe` 5
+        transCount ts `shouldBe` 5
+
+    it "if" $ do
+        let src = [r|
+           procedure main(a) {
+                if (a) {
+                    a = false;
+                }
+                return a;
+            } 
+        |]
+        let ast = fromRight (error "Expected Right but got Left") $ parse parseMiniMM "internal.txt" src
+        let ts = fromRight (error "Expected Right but got Left") (compileMiniMM ast)  
+        nodeCount ts `shouldBe` 8
+        transCount ts `shouldBe` 8
+
+    it "assignmentExample" $ do
+        let src = [r|
+           procedure main(a, b) {
+                if (a) { c = !(b); 
+                } else { c = b; } 
+                d = c ^ true;
+                return d;
+            } 
+        |]
+        let ast = fromRight (error "Expected Right but got Left") $ parse parseMiniMM "internal.txt" src
+        let ts = fromRight (error "Expected Right but got Left") (compileMiniMM ast)  
+        nodeCount ts `shouldBe` 21
+        transCount ts `shouldBe` 21
     
