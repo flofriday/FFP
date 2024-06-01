@@ -45,7 +45,7 @@ whitespace = skipMany (void (char ' ') <|> void (char '\t') <|> void (char '\n')
 parseIdentifier :: Parser Identifier
 parseIdentifier = do
     start <- oneOf ['a'..'z']
-    rest <- many (oneOf (['a'..'z'] ++ ['0'..'9']))
+    rest <- many (oneOf (['a'..'z'] ++ ['0'..'9'] ++ ['_']))
     return (start : rest)
 
 -- | Parses the procedure main header up to, including the first curly brace.
