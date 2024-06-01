@@ -153,6 +153,18 @@ spec = do
         let result = parse parseMiniMM "internal.txt" src
         isRight result `shouldBe` True
 
+    it "read read" $ do
+        -- There once was a parsing bug here so here is an extra test
+        let src = [r|
+            procedure main(a, b) {
+                a = read_bool();
+                b = read_bool();
+                return a;
+            }
+        |]
+        let result = parse parseMiniMM "internal.txt" src
+        isRight result `shouldBe` True
+
     it "assign" $ do
         let src = [r|
             procedure main(a, b) {
@@ -206,5 +218,17 @@ spec = do
         isRight result `shouldBe` True
 
 
-
+    it "variable names that start with same letter as keyword" $ do
+        let src = [r|
+            procedure main(a) {
+                paul = true;
+                richard = false;
+                paul = richard;
+                retina = true;
+                ifinia = false;
+                return a;
+            }
+        |]
+        let result = parse parseMiniMM "internal.txt" src
+        isRight result `shouldBe` True
 

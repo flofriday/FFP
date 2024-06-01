@@ -191,14 +191,15 @@ parseRead = do
     char ')'
     whitespace
     char ';'
+    whitespace
     return (Read dst)
 
 -- | Parses a single statement, all except the return
 parseStatement :: Parser Statement
 parseStatement = do
-    parsePrint
-    <|> (try parseRead)
+    (try parseRead)
     <|> (try parseAssign)
+    <|> try parsePrint
     <|> parseIf
     
 parseReturn :: Parser Statement
