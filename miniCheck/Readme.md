@@ -10,7 +10,7 @@ cabal run miniCheck -- "examples/ts.txt" "examples/ctl.txt"
 positional argument 1: the path for the transition system file
 positional argument 2: the path for the computational tree logic file
 
-other examples
+more examples
 
 ```bash
 cabal run miniCheck -- "examples/ts.txt" "examples/ctl.txt" --ts

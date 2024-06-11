@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
-module ComputationalTreeLogic (parseComputationalTreeLogic, CtlFormula(..), PathFormula(..), StateFormula(..)) where
+
+module ComputationalTreeLogic (parseComputationalTreeLogic, CtlFormula (..), PathFormula (..), StateFormula (..)) where
 
 {- ORMOLU_DISABLE -}
 import Control.Applicative hiding (many)
@@ -11,7 +12,8 @@ import Control.Monad (void)
 data CtlFormula = StateCtl StateFormula | PathCtl PathFormula
   deriving (Eq, Show)
 
-data StateFormula = State_True
+data StateFormula
+  = State_True
   | AtomicP String
   | Not StateFormula
   | And StateFormula StateFormula
@@ -23,22 +25,21 @@ data StateFormula = State_True
   | Forall PathFormula
   deriving (Eq, Show)
 
-data PathFormula = O StateFormula -- Next
+data PathFormula
+  = O StateFormula -- Next
   | U StateFormula StateFormula -- Until
   | E StateFormula -- Eventually
   | A StateFormula -- Always
   deriving (Eq, Show)
 
-
-
 desugar :: StateFormula -> StateFormula
 -- desugaring
 desugar (Exists f) = case f of
   (E g) -> Exists (U State_True (desugar g))
-  (A g) -> Exists (A (desugar g))  -- no desugaring but apply recursively
-  (U phi psi) -> Exists (U (desugar phi) (desugar psi))  -- no desugaring but apply recursively
-  (O g) -> Exists (O (desugar g))  -- no desugaring but apply recursively
-desugar (Forall f) = case f of 
+  (A g) -> Exists (A (desugar g)) -- no desugaring but apply recursively
+  (U phi psi) -> Exists (U (desugar phi) (desugar psi)) -- no desugaring but apply recursively
+  (O g) -> Exists (O (desugar g)) -- no desugaring but apply recursively
+desugar (Forall f) = case f of
   (E g) -> Not (Exists (A (Not (desugar g))))
   (A g) -> Not (Exists (U State_True (Not (desugar g))))
   (U phi psi) -> And (Not (Exists (U (Not (desugar psi)) (And (Not (desugar phi)) (Not (desugar psi)))))) (Not (Exists (A (Not (desugar psi)))))
@@ -47,10 +48,9 @@ desugar (Or (f1) (f2)) = (Not (And (Not (desugar f1)) (Not (desugar f2))))
 desugar (Implies (f1) (f2)) = desugar (Or (Not (f1)) (f2))
 desugar (Equivalent (f1) (f2)) = desugar (And (Implies (f1) (f2)) (Implies (f2) (f1)))
 desugar (Xor (f1) (f2)) = desugar (Or (And (f1) (Not (f2))) (And (f2) (Not (f1))))
- -- no desugaring but apply recursively
+-- no desugaring but apply recursively
 desugar (And (f1) (f2)) = (And (desugar f1) (desugar f2))
 desugar formula = formula
-
 
 comment :: Parser ()
 comment = do
@@ -62,13 +62,13 @@ whitespace :: Parser ()
 whitespace = skipMany (void (char ' ') <|> void (char '\t') <|> void (char '\n') <|> comment)
 
 lowerChar :: Parser Char
-lowerChar = oneOf (['a'..'z'])
+lowerChar = oneOf (['a' .. 'z'])
 
 identifier :: Parser String
 identifier = do
   first <- lowerChar
   rest <- many (lowerChar <|> char '_' <|> digit)
-  return (first:rest)
+  return (first : rest)
 
 lParen :: Parser Char
 lParen = do
@@ -168,7 +168,6 @@ exists = do
   rParen
   return (Exists f)
 
-
 forAll :: Parser StateFormula
 forAll = do
   string "FORALL"
@@ -213,26 +212,28 @@ always = do
   return (A f)
 
 stateFormulaParser :: Parser StateFormula
-stateFormulaParser = trueState
-  <|> try atomicProp
-  <|> try negation
-  <|> try and_parser
-  <|> try or_parser
-  <|> try implies
-  <|> try equivalent
-  <|> try xor
-  <|> try exists
-  <|> try forAll
+stateFormulaParser =
+  trueState
+    <|> try atomicProp
+    <|> try negation
+    <|> try and_parser
+    <|> try or_parser
+    <|> try implies
+    <|> try equivalent
+    <|> try xor
+    <|> try exists
+    <|> try forAll
 
 pathFormulaParser :: Parser PathFormula
-pathFormulaParser = try next
-  <|> try until_parser
-  <|> try eventually
-  <|> try always
-
+pathFormulaParser =
+  try next
+    <|> try until_parser
+    <|> try eventually
+    <|> try always
 
 parseComputationalTreeLogic :: Parser CtlFormula
-parseComputationalTreeLogic = do
-  whitespace
-  (StateCtl . desugar <$> stateFormulaParser)
-  <|> (PathCtl <$> pathFormulaParser)
+parseComputationalTreeLogic =
+  do
+    whitespace
+    (StateCtl . desugar <$> stateFormulaParser)
+    <|> (PathCtl <$> pathFormulaParser)

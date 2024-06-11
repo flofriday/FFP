@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 
-module TransitionSystem (parseTransitionSystem, TransitionSystem(..), State, AP, Action, verifyTransitionSystem, fillEmptyAP) where
+module TransitionSystem (parseTransitionSystem, TransitionSystem (..), State, AP, Action, verifyTransitionSystem, fillEmptyAP) where
 
 {- ORMOLU_DISABLE -}
 import Control.Applicative hiding (many)
@@ -37,17 +37,17 @@ comment = do
 whitespace :: Parser ()
 whitespace = skipMany (void (char ' ') <|> void (char '\t'))
 
-emptyLine :: Parser()
-emptyLine = skipMany ( void (char ' ') <|> void (char '\t') <|> void (char '\n') <|> comment)
+emptyLine :: Parser ()
+emptyLine = skipMany (void (char ' ') <|> void (char '\t') <|> void (char '\n') <|> comment)
 
 lowerChar :: Parser Char
-lowerChar = oneOf (['a'..'z'] ++ ['A'..'Z'])
+lowerChar = oneOf (['a' .. 'z'] ++ ['A' .. 'Z'])
 
 identifier :: Parser String
 identifier = do
   first <- lowerChar
   rest <- many (lowerChar <|> char '_')
-  return (first:rest)
+  return (first : rest)
 
 parseInitial :: Parser (Set State)
 parseInitial = do
@@ -94,8 +94,8 @@ parseAP = do
   minus <- optionMaybe (char '-')
   ident <- identifier
   let flag = case minus of
-               Just _  -> False
-               Nothing -> True
+        Just _ -> False
+        Nothing -> True
   return (ident, flag)
 
 parseLabelFunction :: Parser (State, [AP])
@@ -126,15 +126,14 @@ verifyTransitionSystem ts
     doesLabelItself (s, ap) = elem (s, True) ap
     everyStateLabelsItself = all doesLabelItself (Map.toList (label_functions ts))
 
-
-fillEmptyAP:: TransitionSystem -> TransitionSystem
+fillEmptyAP :: TransitionSystem -> TransitionSystem
 fillEmptyAP transitionSystem = transitionSystem {label_functions = newLabels}
   where
     oldLabels = label_functions transitionSystem
-    newLabels = Map.fromList $ map (\(k, v) -> (k,  fill v) ) (Map.toList oldLabels)
-    fill apList = apList ++ map (\n -> (n, False))  (missingLabels apList)
-    missingLabels apList = Set.toList ( allLabels `Set.difference` Set.fromList (map fst apList))
-    allLabels = Set.fromList $ concatMap (map fst)  (Map.elems oldLabels)
+    newLabels = Map.fromList $ map (\(k, v) -> (k, fill v)) (Map.toList oldLabels)
+    fill apList = apList ++ map (\n -> (n, False)) (missingLabels apList)
+    missingLabels apList = Set.toList (allLabels `Set.difference` Set.fromList (map fst apList))
+    allLabels = Set.fromList $ concatMap (map fst) (Map.elems oldLabels)
 
 parseTransitionSystem :: Parser TransitionSystem
 parseTransitionSystem = do

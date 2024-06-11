@@ -2,6 +2,7 @@
 
 module TransitionSystemSpec (spec) where
 
+{- ORMOLU_DISABLE -}
 import Text.RawString.QQ
 import Test.Hspec
 import TransitionSystem
@@ -12,12 +13,14 @@ import Data.Either (isRight, isLeft, fromRight)
 import qualified Data.Either as Either
 import qualified Data.Maybe as Maybe
 import TransitionSystem (parseTransitionSystem, TransitionSystem (label_functions))
+{- ORMOLU_ENABLE -}
 
 spec :: Spec
 spec = do
   describe "parse parseTransitionSystem" $ do
     it "correct input" $ do
-        let src = [r|
+      let src =
+            [r|
             initial states pay
             states select, soda, beer, pay
             actions insert_coin, get_beer, get_soda
@@ -32,15 +35,16 @@ spec = do
             labels pay: pay
             |]
 
-        let result = parse parseTransitionSystem "internal.txt" src
-        isRight result `shouldBe` True
-        -- FIXME: Yes there should be tests whether or not it got parsed 
-        -- correctly. However, I am not sure if the format will stay that way 
-        -- so there are now tests for it now.
-        --result `shouldBe` Right (TransitionSystem {initial_states = Set.fromList ["pay"], states = Set.fromList ["beer","select","soda"], actions = Set.fromList ["get_beer","get_soda","insert_coin"], transition = [("soda","get_soda","pay"),("beer","get_beer","pay"),("pay","insert_coin","select"),("select","TRUE","beer"),("select","TRUE","soda")], label_functions = Map.fromList [("select",[("x",False),("y",True),("z",False),("a",False),("b",True)])]})
+      let result = parse parseTransitionSystem "internal.txt" src
+      isRight result `shouldBe` True
+    -- FIXME: Yes there should be tests whether or not it got parsed
+    -- correctly. However, I am not sure if the format will stay that way
+    -- so there are now tests for it now.
+    -- result `shouldBe` Right (TransitionSystem {initial_states = Set.fromList ["pay"], states = Set.fromList ["beer","select","soda"], actions = Set.fromList ["get_beer","get_soda","insert_coin"], transition = [("soda","get_soda","pay"),("beer","get_beer","pay"),("pay","insert_coin","select"),("select","TRUE","beer"),("select","TRUE","soda")], label_functions = Map.fromList [("select",[("x",False),("y",True),("z",False),("a",False),("b",True)])]})
 
     it "correct input with comments" $ do
-        let src = [r|
+      let src =
+            [r|
             --  Just an example
             initial states pay
             states select, soda, beer, pay
@@ -59,16 +63,17 @@ spec = do
             labels beer: beer
             |]
 
-        let result = parse parseTransitionSystem "internal.txt" src
-        isRight result `shouldBe` True
+      let result = parse parseTransitionSystem "internal.txt" src
+      isRight result `shouldBe` True
 
     it "empty input" $ do
-        let src =  ""
-        let result = parse parseTransitionSystem "internal.txt" src
-        isLeft result `shouldBe` True
-     
+      let src = ""
+      let result = parse parseTransitionSystem "internal.txt" src
+      isLeft result `shouldBe` True
+
     it "missing states" $ do
-        let src = [r|
+      let src =
+            [r|
             initial states pay
             actions insert_coin, get_beer, get_soda
             trans soda get_soda pay
@@ -79,11 +84,12 @@ spec = do
             labels select: -x, y, -z, -a, b
             |]
 
-        let result = parse parseTransitionSystem "internal.txt" src
-        isLeft result `shouldBe` True
-     
+      let result = parse parseTransitionSystem "internal.txt" src
+      isLeft result `shouldBe` True
+
     it "trailing whitespaces" $ do
-        let src = [r|
+      let src =
+            [r|
             initial states a 
             states a 
             actions x 
@@ -91,11 +97,12 @@ spec = do
             labels a: a 
             |]
 
-        let result = parse parseTransitionSystem "internal.txt" src
-        isRight result `shouldBe` True
- 
+      let result = parse parseTransitionSystem "internal.txt" src
+      isRight result `shouldBe` True
+
     it "initial states exists" $ do
-        let src = [r|
+      let src =
+            [r|
             initial states doesNotExist 
             states a 
             actions x 
@@ -103,11 +110,12 @@ spec = do
             labels a: a 
             |]
 
-        let result = parse parseTransitionSystem "internal.txt" src
-        isLeft result `shouldBe` True
+      let result = parse parseTransitionSystem "internal.txt" src
+      isLeft result `shouldBe` True
 
     it "left transition states exists" $ do
-        let src = [r|
+      let src =
+            [r|
             initial states a
             states a
             actions x 
@@ -115,11 +123,12 @@ spec = do
             labels a: a 
             |]
 
-        let result = parse parseTransitionSystem "internal.txt" src
-        isLeft result `shouldBe` True
+      let result = parse parseTransitionSystem "internal.txt" src
+      isLeft result `shouldBe` True
 
     it "right transition states exists" $ do
-        let src = [r|
+      let src =
+            [r|
             initial states a
             states a 
             actions x 
@@ -127,11 +136,12 @@ spec = do
             labels a: a 
             |]
 
-        let result = parse parseTransitionSystem "internal.txt" src
-        isLeft result `shouldBe` True
+      let result = parse parseTransitionSystem "internal.txt" src
+      isLeft result `shouldBe` True
 
     it "transition action exists" $ do
-        let src = [r|
+      let src =
+            [r|
             initial states a
             states a
             actions x 
@@ -139,11 +149,12 @@ spec = do
             labels a: a 
             |]
 
-        let result = parse parseTransitionSystem "internal.txt" src
-        isLeft result `shouldBe` True
+      let result = parse parseTransitionSystem "internal.txt" src
+      isLeft result `shouldBe` True
 
     it "every state labels itself" $ do
-        let src = [r|
+      let src =
+            [r|
             initial states a
             states a, b 
             actions x 
@@ -153,11 +164,12 @@ spec = do
             labels b: b
             |]
 
-        let result = parse parseTransitionSystem "internal.txt" src
-        isLeft result `shouldBe` True
+      let result = parse parseTransitionSystem "internal.txt" src
+      isLeft result `shouldBe` True
 
     it "every state is not terminal" $ do
-        let src = [r|
+      let src =
+            [r|
             initial states a
             states a, b 
             actions x 
@@ -167,11 +179,12 @@ spec = do
             labels b: b
             |]
 
-        let result = parse parseTransitionSystem "internal.txt" src
-        isLeft result `shouldBe` True
+      let result = parse parseTransitionSystem "internal.txt" src
+      isLeft result `shouldBe` True
 
     it "fill empty AP" $ do
-        let src = [r|
+      let src =
+            [r|
             initial states a
             states a, b
             actions x
@@ -180,8 +193,8 @@ spec = do
             labels a: a
             labels b: b
             |]
-        let result = parse parseTransitionSystem "internal.txt" src
-        isRight result `shouldBe` True
+      let result = parse parseTransitionSystem "internal.txt" src
+      isRight result `shouldBe` True
 
-        let ts = fromRight (error "Expected Right but got Left") result
-        elem ("b", False) (Maybe.fromJust (Map.lookup "a" (label_functions ts))) `shouldBe` True
+      let ts = fromRight (error "Expected Right but got Left") result
+      elem ("b", False) (Maybe.fromJust (Map.lookup "a" (label_functions ts))) `shouldBe` True
