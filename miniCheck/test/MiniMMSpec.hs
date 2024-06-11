@@ -8,6 +8,15 @@ import MiniMM
 import Text.Parsec (parse)
 import Data.Either (isRight, isLeft, fromRight)
 import qualified Data.Either as Either
+import ComputationalTreeLogic
+import ModelChecking
+import MiniMMCompiler
+
+
+errorOnLeft :: Show a => Either a b -> IO b
+errorOnLeft (Left err) = error $ "Encountered Left: " ++ show err
+errorOnLeft (Right result) = return result
+
 
 spec :: Spec
 spec = do
@@ -231,4 +240,42 @@ spec = do
         |]
         let result = parse parseMiniMM "internal.txt" src
         isRight result `shouldBe` True
+
+    it "Mini-- simpleIf late init var is always true" $ do
+        let miniProgram = [r|
+            procedure main(a, b) {
+                if (a) { c = !(b); 
+                } else { c = b; } 
+                d = c ^ true;
+                return d;
+            }
+        |]
+        miniParsed <- errorOnLeft $ parse parseMiniMM "internal.txt" miniProgram
+        ts <- errorOnLeft $ compileMiniMM miniParsed
+
+        let ctlFormula = "FORALL (A (AP a))"
+        ctlParsed <- errorOnLeft $ parse parseComputationalTreeLogic "internal.txt" ctlFormula
+
+        let result = modelCheck ts ctlParsed
+        result `shouldBe` False
+
+    it "Mini-- simpleIf early init var is always true" $ do
+        let miniProgram = [r|
+            procedure main(a, b) {
+                if (a) { c = !(b); 
+                } else { c = b; } 
+                d = c ^ true;
+                return d;
+            }
+        |]
+        miniParsed <- errorOnLeft $ parse parseMiniMM "internal.txt" miniProgram
+        ts <- errorOnLeft $ compileMiniMM miniParsed
+
+        let ctlFormula = "EXISTS (A (AP a))"
+        ctlParsed <- errorOnLeft $ parse parseComputationalTreeLogic "internal.txt" ctlFormula
+
+        let result = modelCheck ts ctlParsed
+        result `shouldBe` True
+
+
 

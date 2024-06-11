@@ -72,11 +72,6 @@ spec = do
         let result = parse parseComputationalTreeLogic "internal.txt" src
         result `shouldBe` Right (StateCtl (Not (Exists (A (Not (AtomicP "x"))))))
 
-    it "desugar: Exists always" $ do
-        let src = "EXISTS (A (AP x))"
-        let result = parse parseComputationalTreeLogic "internal.txt" src
-        result `shouldBe` Right (StateCtl (Not (Forall (U State_True (Not (AtomicP "x"))))))
-
     it "desugar: Forall always" $ do
         let src = "FORALL (A (AP x))"
         let result = parse parseComputationalTreeLogic "internal.txt" src
@@ -96,13 +91,61 @@ spec = do
         result `shouldBe` Right (StateCtl (And (first_implies) (second_implies)))
 
     it "desugar: xor" $ do
-    let src = "XOR (AP x) (AP y)"
-    let result = parse parseComputationalTreeLogic "internal.txt" src
+        let src = "XOR (AP x) (AP y)"
+        let result = parse parseComputationalTreeLogic "internal.txt" src
 
-    let phi_1 = AtomicP "x"
-    let phi_2 = AtomicP "y"
-    let first_and = (And (phi_1) (Not (phi_2)))
-    let second_and = (And (phi_2) (Not (phi_1)))
+        let phi_1 = AtomicP "x"
+        let phi_2 = AtomicP "y"
+        let first_and = (And (phi_1) (Not (phi_2)))
+        let second_and = (And (phi_2) (Not (phi_1)))
 
-    result `shouldBe` Right (StateCtl (Not (And (Not (first_and)) (Not (second_and)))))
+        result `shouldBe` Right (StateCtl (Not (And (Not (first_and)) (Not (second_and)))))
+
+    it "desugar: forall next" $ do
+        let src = "FORALL (O (AP x))"
+        let result = parse parseComputationalTreeLogic "internal.txt" src
+
+        result `shouldBe` Right (StateCtl (Not (Exists (O (Not (AtomicP "x"))))))
+
+    it "NO desugar: true" $ do
+        let src = "TRUE"
+        let result = parse parseComputationalTreeLogic "internal.txt" src
+
+        result `shouldBe` Right (StateCtl State_True)
+
+    it "NO desugar: atomic proposition" $ do
+        let src = "AP abcdefg_abc"
+        let result = parse parseComputationalTreeLogic "internal.txt" src
+
+        result `shouldBe` Right (StateCtl (AtomicP "abcdefg_abc"))
+
+    it "NO desugar: and" $ do
+        let src = "AND (AP a) (AP b)"
+        let result = parse parseComputationalTreeLogic "internal.txt" src
+
+        result `shouldBe` Right (StateCtl (And (AtomicP "a") (AtomicP "b")))
+
+    it "NO desugar: not" $ do
+        let src = "NOT (AP a)"
+        let result = parse parseComputationalTreeLogic "internal.txt" src
+
+        result `shouldBe` Right (StateCtl (Not (AtomicP "a")))
+
+    it "NO desugar: exists next" $ do
+        let src = "EXISTS (O (AP a))"
+        let result = parse parseComputationalTreeLogic "internal.txt" src
+
+        result `shouldBe` Right (StateCtl (Exists (O (AtomicP "a"))))
+
+    it "NO desugar: exists until" $ do
+        let src = "EXISTS (U (AP a) (AP b))"
+        let result = parse parseComputationalTreeLogic "internal.txt" src
+
+        result `shouldBe` Right (StateCtl (Exists (U (AtomicP "a") (AtomicP "b"))))
+
+    it "NO desugar: Exists always" $ do
+        let src = "EXISTS (A (AP a))"
+        let result = parse parseComputationalTreeLogic "internal.txt" src
+
+        result `shouldBe` Right (StateCtl (Exists (A (AtomicP "a"))))
     

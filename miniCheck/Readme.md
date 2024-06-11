@@ -16,7 +16,7 @@ other examples
 cabal run miniCheck -- "examples/ts.txt" "examples/ctl.txt" --ts
 cabal run miniCheck -- --help
 cabal run miniCheck -- extensionmode --extensions
-cabal run miniCheck -- minimmmode "examples/minimm.txt" "examples/ctl.txt"
+cabal run miniCheck -- minimmmode "examples/minimm.txt" "examples/ctl_minimm.txt"
 ```
 
 ## Run all tests

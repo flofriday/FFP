@@ -35,16 +35,17 @@ data PathFormula = O StateFormula -- Next
   deriving (Eq, Show)
 
 
+
 desugar :: StateFormula -> StateFormula
 -- desugaring
 desugar (Exists f) = case f of
   (E g) -> Exists (U State_True g)
-  (A g) -> Not (Forall (U State_True (Not g)))
   _ -> Exists f
 desugar (Forall f) = case f of 
   (E g) -> Not (Exists (A (Not (g))))
   (A g) -> Not (Exists (U State_True (Not g)))
-  _ -> Forall f
+  (U phi psi) -> And (Not (Exists (U (Not psi) (And (Not phi) (Not psi))))) (Not (Exists (A (Not psi))))
+  (O phi) -> Not (Exists (O (Not phi)))
 desugar (Or (f1) (f2)) = (Not (And (Not (f1)) (Not (f2))))
 desugar (Implies (f1) (f2)) = desugar (Or (Not (f1)) (f2))
 desugar (Equivalent (f1) (f2)) = desugar (And (Implies (f1) (f2)) (Implies (f2) (f1)))
@@ -93,6 +94,12 @@ atomicProp = do
   id <- identifier
   return (AtomicP id)
 
+trueState :: Parser StateFormula
+trueState = do
+  string "TRUE"
+  whitespace
+  return State_True
+
 negation :: Parser StateFormula
 negation = do
   string "NOT"
@@ -121,7 +128,7 @@ or_parser = do
   lParen
   f2 <- stateFormulaParser
   rParen
-  return $ desugar (Or (f1) (f2))
+  return (Or (f1) (f2))
 
 implies :: Parser StateFormula
 implies = do
@@ -132,7 +139,7 @@ implies = do
   lParen
   f2 <- stateFormulaParser
   rParen
-  return $ desugar (Implies f1 f2)
+  return (Implies f1 f2)
 
 equivalent :: Parser StateFormula
 equivalent = do
@@ -143,7 +150,7 @@ equivalent = do
   lParen
   f2 <- stateFormulaParser
   rParen
-  return $ desugar (Equivalent f1 f2)
+  return (Equivalent f1 f2)
 
 xor :: Parser StateFormula
 xor = do
@@ -154,7 +161,7 @@ xor = do
   lParen
   f2 <- stateFormulaParser
   rParen
-  return $ desugar (Xor f1 f2)
+  return (Xor f1 f2)
 
 exists :: Parser StateFormula
 exists = do
@@ -162,7 +169,7 @@ exists = do
   lParen
   f <- pathFormulaParser
   rParen
-  return $ desugar (Exists f)
+  return (Exists f)
 
 
 forAll :: Parser StateFormula
@@ -171,7 +178,7 @@ forAll = do
   lParen
   f <- pathFormulaParser
   rParen
-  return $ desugar (Forall f)
+  return (Forall f)
 
 next :: Parser PathFormula
 next = do
@@ -209,7 +216,8 @@ always = do
   return (A f)
 
 stateFormulaParser :: Parser StateFormula
-stateFormulaParser = try atomicProp
+stateFormulaParser = trueState
+  <|> try atomicProp
   <|> try negation
   <|> try and_parser
   <|> try or_parser
@@ -229,5 +237,5 @@ pathFormulaParser = try next
 parseComputationalTreeLogic :: Parser CtlFormula
 parseComputationalTreeLogic = do
   whitespace
-  (StateCtl <$> stateFormulaParser)
+  (StateCtl . desugar <$> stateFormulaParser)
   <|> (PathCtl <$> pathFormulaParser)

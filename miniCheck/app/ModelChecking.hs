@@ -60,6 +60,9 @@ there exists at least one path where f always holds
 satFun ts (StateCtl (Exists (A (f)))) = compute_always_satisfaction ts t
     where
         t = satFun ts (StateCtl f)
+-- Catch all clause for debugging
+--satFun ts formula = error (show formula)
+
 
 -- | Algorithm 2 from the assignment description
 compute_until_satisfaction :: TransitionSystem -> CtlFormula -> Set State -> Set State
