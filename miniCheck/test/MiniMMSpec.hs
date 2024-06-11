@@ -241,7 +241,7 @@ spec = do
         let result = parse parseMiniMM "internal.txt" src
         isRight result `shouldBe` True
 
-    it "Mini-- simpleIf late init var is always true" $ do
+    it "Mini-- a does not hold always for all paths" $ do
         let miniProgram = [r|
             procedure main(a, b) {
                 if (a) { c = !(b); 
@@ -259,7 +259,8 @@ spec = do
         let result = modelCheck ts ctlParsed
         result `shouldBe` False
 
-    it "Mini-- simpleIf early init var is always true" $ do
+
+    it "Mini-- there exists a path so that eventually a or terminal holds" $ do
         let miniProgram = [r|
             procedure main(a, b) {
                 if (a) { c = !(b); 
@@ -271,11 +272,44 @@ spec = do
         miniParsed <- errorOnLeft $ parse parseMiniMM "internal.txt" miniProgram
         ts <- errorOnLeft $ compileMiniMM miniParsed
 
-        let ctlFormula = "EXISTS (A (AP a))"
+        let ctlFormula = "EXISTS (E (XOR (AP a) (AP terminal)))" 
         ctlParsed <- errorOnLeft $ parse parseComputationalTreeLogic "internal.txt" ctlFormula
 
         let result = modelCheck ts ctlParsed
         result `shouldBe` True
 
+    it "Mini-- a does not hold for all states until terminal holds" $ do
+        let miniProgram = [r|
+            procedure main(a, b) {
+                if (a) { c = !(b); 
+                } else { c = b; } 
+                d = c ^ true;
+                return d;
+            }
+        |]
+        miniParsed <- errorOnLeft $ parse parseMiniMM "internal.txt" miniProgram
+        ts <- errorOnLeft $ compileMiniMM miniParsed
 
+        let ctlFormula = "FORALL (U (AP a) (AP terminal))" 
+        ctlParsed <- errorOnLeft $ parse parseComputationalTreeLogic "internal.txt" ctlFormula
 
+        let result = modelCheck ts ctlParsed
+        result `shouldBe` False
+
+    it "Mini-- for all paths eventually car or terminal holds" $ do
+        let miniProgram = [r|
+            procedure main(a) {
+                car = true;
+                print_bool(true);
+                print_bool(false);
+                return a;
+            } 
+        |]
+        miniParsed <- errorOnLeft $ parse parseMiniMM "internal.txt" miniProgram
+        ts <- errorOnLeft $ compileMiniMM miniParsed
+
+        let ctlFormula = "FORALL (E (XOR (AP car) (AP terminal)))"
+        ctlParsed <- errorOnLeft $ parse parseComputationalTreeLogic "internal.txt" ctlFormula
+
+        let result = modelCheck ts ctlParsed
+        result `shouldBe` True

@@ -1,1 +1,1 @@
-EXISTS (A (AP a))
+EXISTS (E (XOR (AP a) (AP terminal)))

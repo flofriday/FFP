@@ -39,14 +39,14 @@ data PathFormula = O StateFormula -- Next
 desugar :: StateFormula -> StateFormula
 -- desugaring
 desugar (Exists f) = case f of
-  (E g) -> Exists (U State_True g)
+  (E g) -> Exists (U State_True (desugar g))
   _ -> Exists f
 desugar (Forall f) = case f of 
-  (E g) -> Not (Exists (A (Not (g))))
-  (A g) -> Not (Exists (U State_True (Not g)))
-  (U phi psi) -> And (Not (Exists (U (Not psi) (And (Not phi) (Not psi))))) (Not (Exists (A (Not psi))))
-  (O phi) -> Not (Exists (O (Not phi)))
-desugar (Or (f1) (f2)) = (Not (And (Not (f1)) (Not (f2))))
+  (E g) -> Not (Exists (A (Not (desugar g))))
+  (A g) -> Not (Exists (U State_True (Not (desugar g))))
+  (U phi psi) -> And (Not (Exists (U (Not (desugar psi)) (And (Not (desugar phi)) (Not (desugar psi)))))) (Not (Exists (A (Not (desugar psi)))))
+  (O phi) -> Not (Exists (O (Not (desugar phi))))
+desugar (Or (f1) (f2)) = (Not (And (Not (desugar f1)) (Not (desugar f2))))
 desugar (Implies (f1) (f2)) = desugar (Or (Not (f1)) (f2))
 desugar (Equivalent (f1) (f2)) = desugar (And (Implies (f1) (f2)) (Implies (f2) (f1)))
 desugar (Xor (f1) (f2)) = desugar (Or (And (f1) (Not (f2))) (And (f2) (Not (f1))))
