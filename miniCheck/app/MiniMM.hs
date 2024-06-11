@@ -1,6 +1,6 @@
-module MiniMM (parseMiniMM, MiniMM(..), Statement(..), Expression(..), Operator(..)) where
+{-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
+module MiniMM (parseMiniMM, MiniMM(MiniMM), Statement(..), Expression(..), Operator(..)) where
 
-import Text.Parsec (ParseError, Parsec)
 import Text.Parsec
 import Text.Parsec.String (Parser)
 import Control.Monad (void)
@@ -145,11 +145,11 @@ parseElse = do
     whitespace
     char '{'
     whitespace
-    statements <- many parseStatement
+    body <- many parseStatement
     whitespace
     char '}'
     whitespace
-    return statements
+    return body
 
 parseIf :: Parser Statement
 parseIf = do
@@ -157,20 +157,20 @@ parseIf = do
     whitespace
     char '('
     whitespace
-    cond <- parseExpression
+    condition <- parseExpression
     whitespace
     char ')'
     whitespace
     char '{'
     whitespace
-    statements <- many parseStatement
+    consequence <- many parseStatement
     whitespace
     char '}'
     whitespace
 
     elseStatements <- optionMaybe parseElse
 
-    return (If cond statements elseStatements)
+    return (If condition consequence elseStatements)
 
 
 parsePrint :: Parser Statement
@@ -227,11 +227,11 @@ parseMiniMM = do
     whitespace
     args <- parseHeader
     whitespace
-    statements <- many (try parseStatement)
+    statementList <- many (try parseStatement)
     whitespace
     returnStmt <- parseReturn
     whitespace
     char '}'
     whitespace
     eof
-    return (MiniMM args (statements ++ [returnStmt]))
+    return (MiniMM args (statementList ++ [returnStmt]))

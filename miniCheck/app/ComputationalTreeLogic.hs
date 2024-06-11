@@ -1,13 +1,8 @@
+{-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 module ComputationalTreeLogic (parseComputationalTreeLogic, CtlFormula(..), PathFormula(..), StateFormula(..)) where
 
 {- ORMOLU_DISABLE -}
 import Control.Applicative hiding (many)
-import Control.Monad.Identity (Identity)
-import Data.Map (Map)
-import qualified Data.Map as Map
-import Data.Set (Set)
-import qualified Data.Set as Set
-import Text.Parsec (ParseError, Parsec)
 import Text.Parsec hiding ((<|>), State)
 import Text.Parsec.String (Parser)
 import Control.Monad (void)
@@ -93,8 +88,8 @@ atomicProp :: Parser StateFormula
 atomicProp = do
   string "AP"
   whitespace
-  id <- identifier
-  return (AtomicP id)
+  name <- identifier
+  return (AtomicP name)
 
 trueState :: Parser StateFormula
 trueState = do

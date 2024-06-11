@@ -4,11 +4,9 @@ import TransitionSystem (TransitionSystem (TransitionSystem), verifyTransitionSy
 import MiniMM
 import qualified Data.Set as Set
 import qualified Data.Map as Map
-import Data.Map (Map)
-import Data.Set (Set)
 import Data.List (find)
 
-type Var = (String, Bool)
+type Variable = (String, Bool)
 
 type CompileError = String
 
@@ -17,23 +15,23 @@ type CompileError = String
 -}
 data CompileState = CompileState {
     transitionSystem :: TransitionSystem,
-    vars :: [Var],
+    variables :: [Variable],
     nodeCounter :: Int
 } deriving (Show, Eq)
 
 
 -- | Generates a list of possible permutations for a list of variable names
-variablePermutations :: [String] -> [[Var]]
+variablePermutations :: [String] -> [[Variable]]
 variablePermutations [] = [[]]
 variablePermutations [v] = [[(v, False)],  [(v, True)]]
-variablePermutations (v:vs) = concatMap (\tail -> [(v, False) : tail, (v, True):tail]) rest
+variablePermutations (v:vs) = concatMap (\end -> [(v, False) : end, (v, True):end]) rest
     where
         rest = variablePermutations vs
 
 {- | Updates the value of a variable if it doesn't exist yet and otherwise 
     inserts it.
 -}
-setVariable :: String -> Bool -> [Var] -> [Var]
+setVariable :: String -> Bool -> [Variable] -> [Variable]
 setVariable name val [] = [(name, val)]
 setVariable name val ((vname, vval):rest)
     | vname == name = (name, val):rest
@@ -51,7 +49,7 @@ setVariableInState name val (CompileState ts vars counter) = (CompileState ts ne
     it will be inserted as an initial node.
 -}
 insertNode :: String -> Maybe String -> CompileState -> CompileState
-insertNode name previousName (CompileState ts vars nodeCounter) = CompileState newTs vars (nodeCounter + 1)
+insertNode name previousName (CompileState ts vars nCounter) = CompileState newTs vars (nCounter + 1)
     where
         (TransitionSystem initial states actions transitions labelFunc) = ts
         newInitial = case previousName of
@@ -85,13 +83,13 @@ evalExpression (Binary left op right) state = do
         Implies -> not (lval && not rval)
         Equal -> lval == rval
 
-evalExpression (Var var) state = case find (\(t, _ ) -> t == var) (vars state) of
+evalExpression (Var var) state = case find (\(t, _ ) -> t == var) (variables state) of
     (Just (_, val)) -> Right val
     Nothing -> Left ("Variable `" ++ var ++ "` was used before it's definition")
 
 
-evalExpression TrueLiteral state = Right True
-evalExpression FalseLiteral state = Right False
+evalExpression TrueLiteral _state = Right True
+evalExpression FalseLiteral _state = Right False
 
 -- | Compiles a list of statements, however it doesn't add terminal states.
 compileStatements :: [Statement] -> String -> CompileState -> Either String CompileState
@@ -140,7 +138,7 @@ compileStatements ((Return var):statements) previous state = do
         newState = insertNode name (Just previous) state
 
 
-mainFolder :: [Statement] -> Either CompileError CompileState -> [Var] ->  Either CompileError CompileState
+mainFolder :: [Statement] -> Either CompileError CompileState -> [Variable] ->  Either CompileError CompileState
 mainFolder statements oldState assignment  = case oldState of
     (Right (CompileState ts _ counter)) -> compileStatements statements (mainName counter) (insertNode (mainName counter) Nothing (CompileState ts assignment counter))
 

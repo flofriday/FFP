@@ -3,7 +3,6 @@ module ModelChecking (modelCheck, satFun) where
 import TransitionSystem
 import ComputationalTreeLogic
 
-import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
@@ -60,8 +59,9 @@ there exists at least one path where f always holds
 satFun ts (StateCtl (Exists (A (f)))) = compute_always_satisfaction ts t
     where
         t = satFun ts (StateCtl f)
--- Catch all clause for debugging
---satFun ts formula = error (show formula)
+
+-- Catch all clause for compiler warning
+satFun _ts _formula = error "Intentionally not implmented should never be reached"
 
 
 -- | Algorithm 2 from the assignment description
@@ -82,9 +82,9 @@ compute_always_satisfaction ts t
 
 -- | Returns all atomic propositions for the provided state
 getAllAtomicPropsOfState :: TransitionSystem -> State -> [AP]
-getAllAtomicPropsOfState ts state = Map.findWithDefault  [] state map
+getAllAtomicPropsOfState ts state = Map.findWithDefault  [] state mapping
     where
-        map = label_functions ts
+        mapping = label_functions ts
 
 -- | is equivalent to the "post" function in the task description
 getSuccessors :: TransitionSystem -> State -> Set State

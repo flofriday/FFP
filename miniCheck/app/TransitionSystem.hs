@@ -1,16 +1,15 @@
+{-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
+
 module TransitionSystem (parseTransitionSystem, TransitionSystem(..), State, AP, Action, verifyTransitionSystem, fillEmptyAP) where
 
 {- ORMOLU_DISABLE -}
 import Control.Applicative hiding (many)
-import Control.Monad.Identity (Identity)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
-import Text.Parsec (ParseError, Parsec)
 import Text.Parsec hiding ((<|>), State)
 import Text.Parsec.String (Parser)
-import Text.Parsec.Combinator
 import Control.Monad (void)
 {- ORMOLU_ENABLE -}
 
@@ -106,10 +105,10 @@ parseLabelFunction = do
   state <- identifier
   char ':'
   whitespace
-  labels <- parseAP `sepBy1` try (whitespace >> char ',' >> whitespace)
+  aps <- parseAP `sepBy1` try (whitespace >> char ',' >> whitespace)
   whitespace
   void (char '\n') <|> eof
-  return (state, labels)
+  return (state, aps)
 
 verifyTransitionSystem :: TransitionSystem -> Maybe String
 verifyTransitionSystem ts
@@ -129,28 +128,29 @@ verifyTransitionSystem ts
 
 
 fillEmptyAP:: TransitionSystem -> TransitionSystem
-fillEmptyAP (TransitionSystem initial states actions trans labels) = TransitionSystem initial states actions trans newLabels
+fillEmptyAP transitionSystem = transitionSystem {label_functions = newLabels}
   where
-    newLabels = Map.fromList $ map (\(k, v) -> (k,  fill v) ) (Map.toList labels)
+    oldLabels = label_functions transitionSystem
+    newLabels = Map.fromList $ map (\(k, v) -> (k,  fill v) ) (Map.toList oldLabels)
     fill apList = apList ++ map (\n -> (n, False))  (missingLabels apList)
     missingLabels apList = Set.toList ( allLabels `Set.difference` Set.fromList (map fst apList))
-    allLabels = Set.fromList $ concatMap (map fst)  (Map.elems labels)
+    allLabels = Set.fromList $ concatMap (map fst)  (Map.elems oldLabels)
 
 parseTransitionSystem :: Parser TransitionSystem
 parseTransitionSystem = do
   emptyLine
   initial <- parseInitial
   emptyLine
-  states <- parseStates
+  stateList <- parseStates
   emptyLine
-  actions <- parseActions
+  actionList <- parseActions
   emptyLine
-  transitions <- many (parseTransition <* emptyLine)
+  transitionList <- many (parseTransition <* emptyLine)
   emptyLine
   labelFunctions <- many (parseLabelFunction <* emptyLine)
   emptyLine
   eof
-  let ts = TransitionSystem initial states actions transitions (Map.fromList labelFunctions)
+  let ts = TransitionSystem initial stateList actionList transitionList (Map.fromList labelFunctions)
   case verifyTransitionSystem ts of
     (Just err) -> fail err
     _ -> return (fillEmptyAP ts)

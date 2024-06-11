@@ -20,7 +20,7 @@ errorOnLeft (Right result) = return result
 
 spec :: Spec
 spec = do
-  describe "parse parseMiniMM" $ do
+  describe "Mini-- parse" $ do
     it "minimal example" $ do
         let src = [r|
             procedure main(a, b) {
@@ -240,6 +240,8 @@ spec = do
         |]
         let result = parse parseMiniMM "internal.txt" src
         isRight result `shouldBe` True
+
+  describe "Model check Mini--" $ do
 
     it "Mini-- a does not hold always for all paths" $ do
         let miniProgram = [r|

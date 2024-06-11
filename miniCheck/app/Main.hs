@@ -1,4 +1,6 @@
-{-# LANGUAGE DeriveDataTypeable, RecordWildCards #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
+
 module Main where
 
 import System.IO
@@ -8,12 +10,8 @@ import MiniMM
 import MiniMMCompiler
 import ModelChecking
 import Text.Parsec (parse)
-import System.Environment (getArgs, withArgs)
-import Text.Printf (printf)
-import Data.Either (fromRight)
 import System.Exit (exitFailure, exitSuccess)
 import System.Console.CmdArgs
-import Data.Data (Data, Typeable)
 
 -- | Name of the program
 _PROGRAM_NAME = "miniCheck"
@@ -91,7 +89,7 @@ parseAndModelCheck ts_path ctl_path only_check_ts = do
   -- read and parse transition system file
   ts_file <- openFile ts_path ReadMode
   ts_contents <- hGetContents ts_file
-  ts <- exitOnLeft $ parse parseTransitionSystem ts_path ts_contents
+  tsystem <- exitOnLeft $ parse parseTransitionSystem ts_path ts_contents
   --print ts
   hClose ts_file
   if only_check_ts then do
@@ -105,7 +103,7 @@ parseAndModelCheck ts_path ctl_path only_check_ts = do
     --print ctl
     hClose ctl_file
     -- model checking
-    let result = modelCheck ts ctl
+    let result = modelCheck tsystem ctl
     print result
 
 -- | This is executed if the first extension Mini-- is invoked.
@@ -115,18 +113,21 @@ parseMiniMMAndCheck mini_path ctl_path = do
   mini_file <- openFile mini_path ReadMode
   mini_contents <- hGetContents mini_file
   mini <- exitOnLeft $ parse parseMiniMM mini_path mini_contents
-  ts <- exitOnLeft $ compileMiniMM mini
-  print ts
+  tsystem <- exitOnLeft $ compileMiniMM mini
+
+
+  -- FIXME: put behind flag
+  print tsystem
 
   -- Parse the ctl
   ctl_file <- openFile ctl_path ReadMode
   ctl_contents <- hGetContents ctl_file
   ctl <- exitOnLeft $ parse parseComputationalTreeLogic ctl_path ctl_contents 
   
-  print (satFun ts ctl)
+  print (satFun tsystem ctl)
 
   -- Check it
-  let result = modelCheck ts ctl
+  let result = modelCheck tsystem ctl
   print result
   hClose mini_file
   hClose ctl_file
