@@ -4,7 +4,7 @@
 
 ```bash
 cabal update
-cabal run miniCheck -- "./app/transition_system.txt" "./app/computation_tree_logic.txt"
+cabal run miniCheck -- "examples/ts.txt" "examples/ctl.txt"
 ```
 
 positional argument 1: the path for the transition system file
@@ -13,10 +13,10 @@ positional argument 2: the path for the computational tree logic file
 other examples
 
 ```bash
-cabal run miniCheck -- "./app/transition_system.txt" "./app/computation_tree_logic.txt" --ts
+cabal run miniCheck -- "examples/ts.txt" "examples/ctl.txt" --ts
 cabal run miniCheck -- --help
 cabal run miniCheck -- extensionmode --extensions
-cabal run miniCheck -- minimmmode "app/minimm.txt" "app/computation_tree_logic.txt"
+cabal run miniCheck -- minimmmode "examples/minimm.txt" "examples/ctl.txt"
 ```
 
 ## Run all tests
@@ -125,7 +125,7 @@ FORALL (U (AND (AP ap1) (NOT (AP ap2))) (OR (AP ap3) (EXISTS (A (AP ap4)))))
 
 ## Mini-- (Extension 1)
 
-The grammar is still the same from the assingment, however we replaced the 
+The grammar is still the same from the assingment, however we replaced the
 mathematical operators with the more common C-like operators:
 
 ```
@@ -137,4 +137,3 @@ mathematical operators with the more common C-like operators:
 ```
 
 Also for convenience it implements C-like line comments.
-
