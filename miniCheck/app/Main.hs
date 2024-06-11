@@ -95,7 +95,7 @@ parseAndModelCheck ts_path ctl_path only_check_ts = do
   --print ts
   hClose ts_file
   if only_check_ts then do
-    putStrLn "\n************* \n--ts mode was enabled. Therefore we are only checking the transition system. Exiting...\n*************\n"
+    putStrLn "\n************* \n--ts mode was enabled. Therefore we are only checking the transition system. This succeeded therefore we are exiting...\n*************\n"
     exitSuccess
   else do
     -- read and parse ctl file
@@ -122,6 +122,8 @@ parseMiniMMAndCheck mini_path ctl_path = do
   ctl_file <- openFile ctl_path ReadMode
   ctl_contents <- hGetContents ctl_file
   ctl <- exitOnLeft $ parse parseComputationalTreeLogic ctl_path ctl_contents 
+  
+  print (satFun ts ctl)
 
   -- Check it
   let result = modelCheck ts ctl

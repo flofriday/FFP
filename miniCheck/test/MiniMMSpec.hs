@@ -313,3 +313,22 @@ spec = do
 
         let result = modelCheck ts ctlParsed
         result `shouldBe` True
+
+    it "Mini-- there exists a path where c is eventually true and the next state is terminal" $ do
+        let miniProgram = [r|
+            procedure main(a, b) {
+                if (a) { c = !(b); 
+                } else { c = b; } 
+                d = c ^ true;
+                c = true;
+                return d;
+            }
+        |]
+        miniParsed <- errorOnLeft $ parse parseMiniMM "internal.txt" miniProgram
+        ts <- errorOnLeft $ compileMiniMM miniParsed
+
+        let ctlFormula = "EXISTS (E (AND (AP c) (FORALL (O (AP terminal)))))"
+        ctlParsed <- errorOnLeft $ parse parseComputationalTreeLogic "internal.txt" ctlFormula
+
+        let result = modelCheck ts ctlParsed
+        result `shouldBe` True

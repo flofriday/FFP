@@ -40,7 +40,9 @@ desugar :: StateFormula -> StateFormula
 -- desugaring
 desugar (Exists f) = case f of
   (E g) -> Exists (U State_True (desugar g))
-  _ -> Exists f
+  (A g) -> Exists (A (desugar g))  -- no desugaring but apply recursively
+  (U phi psi) -> Exists (U (desugar phi) (desugar psi))  -- no desugaring but apply recursively
+  (O g) -> Exists (O (desugar g))  -- no desugaring but apply recursively
 desugar (Forall f) = case f of 
   (E g) -> Not (Exists (A (Not (desugar g))))
   (A g) -> Not (Exists (U State_True (Not (desugar g))))
