@@ -5,6 +5,7 @@ module Main where
 
 {- ORMOLU_DISABLE -}
 import ComputationalTreeLogic
+import LinearTemporalLogic
 import MiniMM
 import MiniMMCompiler
 import ModelChecking
@@ -33,6 +34,7 @@ _AUTHORS = "Johannes Blaha, Florian Freitag"
 data MiniCheckArgs
   = NormalMode {tsFilePath :: FilePath, ctlFilePath :: FilePath, ts :: Bool}
   | MiniMMMode {minimmFilePath :: FilePath, ctlFilePath :: FilePath, dumpTs :: Bool}
+  | LtlMode {tsFilePath :: FilePath, ltlFilePath :: FilePath, kBound:: Integer}
   | ExtensionMode {extensions :: Bool}
   deriving (Show, Data, Typeable, Eq)
 
@@ -54,6 +56,15 @@ minimmMode =
       dumpTs = def &= help "Set this flag to dump the generated TS from the MiniMM" &= explicit &= name "dump-ts"
     }
 
+-- | Defines the arguments for the Mini-- mode.
+ltlMode :: MiniCheckArgs
+ltlMode =
+  LtlMode
+    { tsFilePath = def &= argPos 4 &= typ "TS_FILE_PATH",
+      ltlFilePath = def &= argPos 5 &= typ "LTL_FILE_PATH",
+      kBound = def &= argPos 6 &= typ "K_BOUND"
+    }
+
 -- | Defines the arguments for the extension mode.
 extensionMode :: MiniCheckArgs
 extensionMode =
@@ -65,7 +76,7 @@ extensionMode =
 miniCheckModes :: Mode (CmdArgs MiniCheckArgs)
 miniCheckModes =
   cmdArgsMode $
-    modes [normalMode &= auto, minimmMode, extensionMode]
+    modes [normalMode &= auto, minimmMode, ltlMode, extensionMode]
       &= verbosityArgs [explicit, name "Verbose", name "V"] []
       &= versionArg [explicit, name "version", name "v", summary _PROGRAM_INFO]
       &= summary (_PROGRAM_INFO ++ ", " ++ _AUTHORS)
@@ -90,6 +101,8 @@ main = do
       parseAndModelCheck path_ts path_ctl tsFlag
     MiniMMMode {minimmFilePath = path_mini, ctlFilePath = path_ctl, dumpTs = dump} ->
       parseMiniMMAndCheck path_mini path_ctl dump
+    LtlMode {tsFilePath = path_ts, ltlFilePath = path_ltl, kBound = k_bound} ->
+      parseAndLtlModelCheck path_ts path_ltl k_bound
     ExtensionMode {extensions = extFlag} ->
       listExtensions extFlag
 
@@ -141,6 +154,28 @@ parseMiniMMAndCheck mini_path ctl_path dump = do
       print result
       hClose mini_file
       hClose ctl_file
+
+
+-- | This is executed if the second extension Bounded Model checking is invoked.
+parseAndLtlModelCheck :: String -> String -> Integer -> IO ()
+parseAndLtlModelCheck ts_path ltl_path k_bound = do
+  -- read and parse transition system file
+  ts_file <- openFile ts_path ReadMode
+  ts_contents <- hGetContents ts_file
+  tsystem <- exitOnLeft $ parse parseTransitionSystem ts_path ts_contents
+  -- print ts
+  hClose ts_file
+
+  -- read and parse ltl file
+  ltl_file <- openFile ltl_path ReadMode
+  ltl_contents <- hGetContents ltl_file
+  ltl <- exitOnLeft $ parse parseLinearTemporalLogic ltl_path ltl_contents
+  print ltl
+  hClose ltl_file
+
+  -- model checking
+  --let result = modelCheckLTL tsystem ltl
+  --print result
 
 -- | This is executed when the program is started in the extension mode
 listExtensions :: Bool -> IO ()
