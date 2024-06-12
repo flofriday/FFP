@@ -9,9 +9,11 @@ import Text.Parsec.String (Parser)
 import Control.Monad (void)
 {- ORMOLU_ENABLE -}
 
+-- | Parent data type of formulas. Is a Sum type of State formulas and Path formulas
 data CtlFormula = StateCtl StateFormula | PathCtl PathFormula
   deriving (Eq, Show)
 
+-- | This datatype represents a single state formula
 data StateFormula
   = State_True
   | AtomicP String
@@ -25,6 +27,7 @@ data StateFormula
   | Forall PathFormula
   deriving (Eq, Show)
 
+-- | This datatype represents a single path formula
 data PathFormula
   = O StateFormula -- Next
   | U StateFormula StateFormula -- Until
@@ -231,6 +234,7 @@ pathFormulaParser =
     <|> try eventually
     <|> try always
 
+-- | the main function of this module. Takes a string and parses it to a CTL Formula
 parseComputationalTreeLogic :: Parser CtlFormula
 parseComputationalTreeLogic =
   do
