@@ -31,7 +31,7 @@ generatePathsFromState ts state 0 = [[state]]
 generatePathsFromState ts state n = [state:path | next <- nextStates, path <- generatePathsFromState ts next (n-1)]
   where nextStates = [s2 | (s1, _, s2) <- transition ts, s1 == state]
 
--- | evaluate whether this formula holds for the given path, ts and k bound
+-- | evaluate whether this formula holds for the given path, ts and start node
 evaluateLtlFormula :: LtlFormula -> Path -> TransitionSystem -> Int -> Bool
 evaluateLtlFormula formula path ts i
   | i >= length path = False
