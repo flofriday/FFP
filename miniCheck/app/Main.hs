@@ -35,7 +35,7 @@ _AUTHORS = "Johannes Blaha, Florian Freitag"
 data MiniCheckArgs
   = NormalMode {tsFilePath :: FilePath, ctlFilePath :: FilePath, ts :: Bool}
   | MiniMMMode {minimmFilePath :: FilePath, ctlFilePath :: FilePath, dumpTs :: Bool}
-  | LtlMode {tsFilePath :: FilePath, ltlFilePath :: FilePath, kBound:: Int}
+  | LtlMode {tsFilePath :: FilePath, ltlFilePath :: FilePath, kBound :: Int, dumpLtl :: Bool}
   | ExtensionMode {extensions :: Bool}
   deriving (Show, Data, Typeable, Eq)
 
@@ -63,7 +63,8 @@ ltlMode =
   LtlMode
     { tsFilePath = def &= argPos 4 &= typ "TS_FILE_PATH",
       ltlFilePath = def &= argPos 5 &= typ "LTL_FILE_PATH",
-      kBound = def &= argPos 6 &= typ "K_BOUND"
+      kBound = def &= argPos 6 &= typ "K_BOUND",
+      dumpLtl = def &= help "Set this flag to dump the parsed LTL" &= explicit &= name "dump-ltl"
     }
 
 -- | Defines the arguments for the extension mode.
@@ -102,8 +103,8 @@ main = do
       parseAndModelCheck path_ts path_ctl tsFlag
     MiniMMMode {minimmFilePath = path_mini, ctlFilePath = path_ctl, dumpTs = dump} ->
       parseMiniMMAndCheck path_mini path_ctl dump
-    LtlMode {tsFilePath = path_ts, ltlFilePath = path_ltl, kBound = k_bound} ->
-      parseAndLtlModelCheck path_ts path_ltl k_bound
+    LtlMode {tsFilePath = path_ts, ltlFilePath = path_ltl, kBound = k_bound, dumpLtl = dump} ->
+      parseAndLtlModelCheck path_ts path_ltl k_bound dump
     ExtensionMode {extensions = extFlag} ->
       listExtensions extFlag
 
@@ -120,7 +121,6 @@ parseAndModelCheck ts_path ctl_path only_check_ts = do
   if only_check_ts
     then do
       putStrLn "\n************* \n--ts mode was enabled. Therefore we are only checking the transition system. This succeeded therefore we are exiting...\n*************\n"
-      exitSuccess
     else do
       -- read and parse ctl file
       ctl_file <- openFile ctl_path ReadMode
@@ -156,10 +156,9 @@ parseMiniMMAndCheck mini_path ctl_path dump = do
       hClose mini_file
       hClose ctl_file
 
-
 -- | This is executed if the second extension Bounded Model checking is invoked.
-parseAndLtlModelCheck :: String -> String -> Int -> IO ()
-parseAndLtlModelCheck ts_path ltl_path k_bound = do
+parseAndLtlModelCheck :: String -> String -> Int -> Bool -> IO ()
+parseAndLtlModelCheck ts_path ltl_path k_bound dump = do
   -- read and parse transition system file
   ts_file <- openFile ts_path ReadMode
   ts_contents <- hGetContents ts_file
@@ -171,12 +170,15 @@ parseAndLtlModelCheck ts_path ltl_path k_bound = do
   ltl_file <- openFile ltl_path ReadMode
   ltl_contents <- hGetContents ltl_file
   ltl <- exitOnLeft $ parse parseLinearTemporalLogic ltl_path ltl_contents
-  print ltl
   hClose ltl_file
 
-  -- model checking
-  let result = modelCheckLTL tsystem ltl k_bound
-  print result
+  if dump
+    then do
+      print ltl
+    else do
+      -- model checking
+      let result = modelCheckLTL tsystem ltl k_bound
+      print result
 
 -- | This is executed when the program is started in the extension mode
 listExtensions :: Bool -> IO ()
@@ -185,6 +187,7 @@ listExtensions flag = do
     then do
       putStrLn "The implemented extensions are: "
       putStrLn "\t Extension 1: Mini--"
+      putStrLn "\t Extension 2: Bounded LTL Model Checking"
       exitSuccess
     else do
       putStrLn ""
