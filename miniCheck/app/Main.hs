@@ -9,6 +9,7 @@ import LinearTemporalLogic
 import MiniMM
 import MiniMMCompiler
 import ModelChecking
+import ModelCheckingLTL
 import System.Console.CmdArgs
 import System.Exit (exitFailure, exitSuccess)
 import System.IO
@@ -34,7 +35,7 @@ _AUTHORS = "Johannes Blaha, Florian Freitag"
 data MiniCheckArgs
   = NormalMode {tsFilePath :: FilePath, ctlFilePath :: FilePath, ts :: Bool}
   | MiniMMMode {minimmFilePath :: FilePath, ctlFilePath :: FilePath, dumpTs :: Bool}
-  | LtlMode {tsFilePath :: FilePath, ltlFilePath :: FilePath, kBound:: Integer}
+  | LtlMode {tsFilePath :: FilePath, ltlFilePath :: FilePath, kBound:: Int}
   | ExtensionMode {extensions :: Bool}
   deriving (Show, Data, Typeable, Eq)
 
@@ -157,7 +158,7 @@ parseMiniMMAndCheck mini_path ctl_path dump = do
 
 
 -- | This is executed if the second extension Bounded Model checking is invoked.
-parseAndLtlModelCheck :: String -> String -> Integer -> IO ()
+parseAndLtlModelCheck :: String -> String -> Int -> IO ()
 parseAndLtlModelCheck ts_path ltl_path k_bound = do
   -- read and parse transition system file
   ts_file <- openFile ts_path ReadMode
@@ -174,8 +175,8 @@ parseAndLtlModelCheck ts_path ltl_path k_bound = do
   hClose ltl_file
 
   -- model checking
-  --let result = modelCheckLTL tsystem ltl
-  --print result
+  let result = modelCheckLTL tsystem ltl k_bound
+  print result
 
 -- | This is executed when the program is started in the extension mode
 listExtensions :: Bool -> IO ()

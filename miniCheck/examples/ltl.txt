@@ -1,1 +1,1 @@
-E (OR (AP a) (AP b))
+U (AP pay) (AP select)

@@ -63,6 +63,7 @@ executable miniCheck
                     ComputationalTreeLogic,
                     LinearTemporalLogic,
                     ModelChecking,
+                    ModelCheckingLTL,
                     MiniMM,
                     MiniMMCompiler
 
