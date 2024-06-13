@@ -89,7 +89,7 @@ labels select: -x, y, -z, -a, b
 ## Computational Tree Logic (CTL)
 
 ```ebnf
-ctl_system        = ctl_formula | ctl_formula newline ctl_system;
+ctl_system        = ctl_formula | ctl_formula ctl_system;
 ctl_formula       = state_formula | path_formula;
 
 state_formula     = "AP" identifier
@@ -109,7 +109,6 @@ path_formula      = "O" "(" state_formula ")"
                   | "A" "(" state_formula ")"
                   ;
 
-newline           = "\n";
 lower_char        = "a" | "b" | "c" | ... | "z";
 digits            = "0" | "1" | "2" | ... | "9";
 identifier        = lower_char {"_" | lower_char | digits};
@@ -124,7 +123,7 @@ Example:
 FORALL (U (AND (AP ap1) (NOT (AP ap2))) (OR (AP ap3) (EXISTS (A (AP ap4)))))
 ```
 
-## Mini-- (Extension 1)
+## Extension 1: Mini--
 
 The grammar is still the same from the assingment, however we replaced the
 mathematical operators with the more common C-like operators:
@@ -138,3 +137,28 @@ mathematical operators with the more common C-like operators:
 ```
 
 Also for convenience it implements C-like line comments.
+
+## Extension 2: Bounded LTL Model Checking
+
+```ebnf
+ltl_formular        = "TRUE"
+                    | "AP" identifier
+                    | "NOT" ltl_formular
+                    | "AND" "(" ltl_formular ltl_formular ")"
+                    | "OR" "(" ltl_formular ltl_formular ")"
+                    | "XOR" "(" ltl_formular ltl_formular ")"
+                    | "IMPLIES" "(" ltl_formular ltl_formular ")"
+                    | "EQUIVALENT" "(" ltl_formular ltl_formular ")"
+                    | "O" "(" ltl_formular ")"
+                    | "U" "(" ltl_formular ")" "(" ltl_formular ")"
+                    | "E" "(" ltl_formular ")"
+                    | "A" "(" ltl_formular ")"
+                    ;
+
+lower_char        = "a" | "b" | "c" | ... | "z";
+digits            = "0" | "1" | "2" | ... | "9";
+identifier        = lower_char {"_" | lower_char | digits};
+```
+
+To improve usability you can also write comments which are haskell like comments
+and start with `--`.
