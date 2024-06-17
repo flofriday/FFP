@@ -13,6 +13,7 @@ positional argument 2: the path for the computational tree logic file
 more examples
 
 ```bash
+cabal run miniCheck -- "examples/ts.txt" "examples/ctl.txt"
 cabal run miniCheck -- "examples/ts.txt" "examples/ctl.txt" --ts
 cabal run miniCheck -- --help
 cabal run miniCheck -- extensionmode --extensions
