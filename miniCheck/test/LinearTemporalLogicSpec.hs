@@ -48,3 +48,7 @@ spec = do
       let src = "A (AP a)"
       let result = parse parseLinearTemporalLogic "internal.txt" src
       result `shouldBe` Right (Not (U State_True (Not (AtomicP "a"))))
+    it "parse implies eventually" $ do
+      let src = "IMPLIES (E (AP pay)) (E (AP select))"
+      let result = parse parseLinearTemporalLogic "internal.txt" src
+      result `shouldBe` Right (Not (And (Not (Not (U State_True (AtomicP "pay")))) (Not (U State_True (AtomicP "select")))))

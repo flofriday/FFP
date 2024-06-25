@@ -30,7 +30,7 @@ desugar :: LtlFormula -> LtlFormula
 desugar (E phi) = U State_True (desugar phi)
 desugar (A phi) = Not (desugar (E (Not phi)))
 desugar (Or (f1) (f2)) = (Not (And (Not (desugar f1)) (Not (desugar f2))))
-desugar (Implies (f1) (f2)) = desugar (Or (Not (f1)) (f2))
+desugar (Implies (f1) (f2)) = desugar (Or (Not (desugar f1)) (desugar f2))
 desugar (Equivalent (f1) (f2)) = desugar (And (Implies (f1) (f2)) (Implies (f2) (f1)))
 desugar (Xor (f1) (f2)) = desugar (Or (And (f1) (Not (f2))) (And (f2) (Not (f1))))
 -- no desugaring but apply recursively
