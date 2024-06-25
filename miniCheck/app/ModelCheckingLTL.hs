@@ -44,4 +44,4 @@ evaluateLtlFormula formula path ts i
       O f -> evaluateLtlFormula f path ts (i + 1) -- check if the formula holds the path i+1, i.e. the next state
       -- iterate over each state and check if f2 holds and if for every path before j f1 holds, if this is the case fpr any combination, the until operator holds
       U f1 f2 -> or [evaluateLtlFormula f2 path ts j && all (\k -> evaluateLtlFormula f1 path ts k) [i .. (j - 1)] | j <- [i .. (length path - 1)]]
-      _ -> error "Invalid case, desugaring should have elminated it."
+      _formula -> error ("Invalid case, desugaring should have elminated it."  ++ show _formula)

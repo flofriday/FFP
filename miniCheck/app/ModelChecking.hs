@@ -56,7 +56,7 @@ satFun ts (StateCtl (Exists (A (f)))) = compute_always_satisfaction ts t
     t = satFun ts (StateCtl f)
 
 -- Catch all clause for compiler warning
-satFun _ts _formula = error "Intentionally not implmented should never be reached"
+satFun _ts _formula = error ("Intentionally not implmented should never be reached" ++ show _formula)
 
 -- | Algorithm 2 from the assignment description
 compute_until_satisfaction :: TransitionSystem -> CtlFormula -> Set State -> Set State

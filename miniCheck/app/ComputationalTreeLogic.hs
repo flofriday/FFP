@@ -48,7 +48,7 @@ desugar (Forall f) = case f of
   (U phi psi) -> And (Not (Exists (U (Not (desugar psi)) (And (Not (desugar phi)) (Not (desugar psi)))))) (Not (Exists (A (Not (desugar psi)))))
   (O phi) -> Not (Exists (O (Not (desugar phi))))
 desugar (Or (f1) (f2)) = (Not (And (Not (desugar f1)) (Not (desugar f2))))
-desugar (Implies (f1) (f2)) = desugar (Or (Not (f1)) (f2))
+desugar (Implies (f1) (f2)) = desugar (Or (Not (desugar f1)) (desugar f2))
 desugar (Equivalent (f1) (f2)) = desugar (And (Implies (f1) (f2)) (Implies (f2) (f1)))
 desugar (Xor (f1) (f2)) = desugar (Or (And (f1) (Not (f2))) (And (f2) (Not (f1))))
 -- no desugaring but apply recursively

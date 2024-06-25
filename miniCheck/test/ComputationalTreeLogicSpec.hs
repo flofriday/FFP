@@ -151,3 +151,9 @@ spec = do
       let result = parse parseComputationalTreeLogic "internal.txt" src
 
       result `shouldBe` Right (StateCtl (Exists (A (AtomicP "a"))))
+
+    it "desugar: implies forall" $ do
+      let src = "IMPLIES (FORALL (E (AP pay))) (FORALL (E (AP select)))"
+      let result = parse parseComputationalTreeLogic "internal.txt" src
+
+      result `shouldBe` Right (StateCtl (Not (And (Not (Not (Not (Exists (A (Not (AtomicP "pay"))))))) (Not (Not (Exists (A (Not (AtomicP "select")))))))))
